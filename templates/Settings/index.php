@@ -39,7 +39,7 @@ function formSubmit() {
                         <?= $this->Form->file('result') ?>
                     </td>
                     <td width="30%" style="vertical-align:middle">
-                        <button type="button" style="width:100px;height:34px;cursor:pointer;" onclick="location.href='<?= $this->Url->build(['controller' => 'Imports', 'action' => 'template']) ?>';" class="btn-warning btn-xs">雛形DL</button>
+                        <button type="button" style="width:100px;height:34px;cursor:pointer;" onclick="location.href='<?= $this->Url->build(['controller' => 'Imports', 'action' => 'legacyTemplate']) ?>';" class="btn-warning btn-xs">雛形DL</button>
                         <?= $this->Form->button('取　込', [
                             'div' => false,
                             'id' => 'import',
@@ -67,7 +67,7 @@ function formSubmit() {
         <td width="50%"><button onclick="location.href='<?= $this->Url->build('/mt-statuses') ?>';" class="btn-info btn-xs" style="width:150px;height:30px;cursor:pointer">一覧</button></td>
     </tr>
      <tr>
-         <th style="vertical-align:middle">&nbsp;店舗への連絡</th>
+         <th style="vertical-align:middle">&nbsp;種別リスト</th>
          <td width="50%"><button onclick="location.href='<?= $this->Url->build('/mt-queues') ?>';" class="btn-info btn-xs" style="width:150px;height:30px;cursor:pointer">一覧</button></td>
      </tr>
     <tr>

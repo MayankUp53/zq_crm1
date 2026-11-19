@@ -3,28 +3,30 @@ $isEdit = $isEdit ?? false;
 $heading = $isEdit ? '顧客詳細情報 更新' : '顧客詳細情報新規登録';
 $currentUser = $this->request->getAttribute('identity');
 $userAuth = $currentUser ? $currentUser->getOriginalData()->auth : null;
-$rows = [
-    [['client_code', '得意先CD＊', 6], ['client_branch_code', '得意先支店CD', 3]],
-    [['client_name', '得意先名', 30], ['client_branch_name', '得意先支店名', 30]],
-    [['addr1', '住所1', 30], ['addr2', '住所2', 30]],
-    [['addr3', '住所３', 30], ['tel', 'TEL＊', null]],
-    [['fax', 'FAX', null], ['tel2', 'サブ電話番号1', null]],
-    [['incharge1_name', '顧客の担当者1', null], ['incharge1_phone', '顧客の担当者1電話', null]],
-    [['incharge2_name', '顧客の担当者2', null], ['incharge2_phone', '顧客の担当者2電話', null]],
-    [['incharge3_name', '顧客の担当者3', null], ['incharge3_phone', '顧客の担当者3電話', null]],
-    [['incharge4_name', '顧客の担当者4', null], ['incharge4_phone', '顧客の担当者4電話', null]],
-    [['section_name', '所属名', 20], ['sales_person', '営業担当者名', 20]],
-    [['deadline', '締日', null]],
-    [['notes1', '備考１', 50], ['notes2', '備考2', 50]],
+$editRows = [
+    [['client_code', 'キー＊', 100], ['base_name', '拠点', 30]],
+    [['book_name', '得意先名(帳合先名)', 60], ['client_branch_code', '複数口座CD', 50]],
+    [['reserve1', '得意先CD', 50], ['reserve2', '帳合先・納品先CD', 50]],
+    [['addr1', '住所1', 50], ['addr2', '住所2', 75]],
+    [['fax', 'FAX', 10], ['tel', 'TEL＊', 12]],
+    [['sales_staff_cd', '営業員CD', 10], ['sub_phone1', '顧客の担当者1電話', 12]],
+    [['sales_rep_name', '営業担当者名', 20], ['sub_phone2', 'サブ電話番号2', 20]],
+    [['closing_date', '締日', null], ['sub_phone3', 'サブ電話番号3', null]],
+    [['collection_cls', '回収区分', null], ['sub_phone4', 'サブ電話番号4', null]],
+    [['direct_cls', 'ベッツダイレクト区分', 20], ['sub_phone5', 'サブ電話番号5', 20]],
+    [['remarks1', '備考1（受注時摘要）', 50], ['remarks2', '備考２（出荷時摘要）', 50]],
     [['notes3', '備考3', 50], ['notes4', '備考4', 50]],
+    [['remarks5', '備考5', 50], ['remarks6', '備考6', 50]],
 ];
+$rows = $editRows;
 $buttonStyle = 'width:150px;' . ($isEdit ? '' : 'height:30px;') . 'cursor:pointer';
+$this->Form->setTemplates(['inputContainer' => '{{content}}']);
 ?>
 <div class="panel <?= $isEdit ? 'panel-warning' : 'panel-info' ?> customer-form">
     <div class="panel-heading">
         <h3 class="panel-title"><?= h($heading) ?></h3>
     </div>
-    <?= $this->Form->create($customer, ['url' => $isEdit ? ['action' => 'edit', $customer->id] : ['action' => 'add'], 'id' => 'customerForm']) ?>
+    <?= $this->Form->create($customer, ['url' => $isEdit ? ['action' => 'edit', $customer->id] : ['action' => 'add'], 'id' => 'customerForm', 'novalidate' => true]) ?>
     <?php if ($isEdit): ?>
         <?= $this->Form->control('id', ['type' => 'hidden']) ?>
     <?php endif; ?>
@@ -35,18 +37,20 @@ $buttonStyle = 'width:150px;' . ($isEdit ? '' : 'height:30px;') . 'cursor:pointe
                 <tr>
                     <?php foreach ($fields as [$field, $label, $maxLength]): ?>
                         <?php
-                        $isNotes = str_starts_with($field, 'notes');
+                        $isTextarea = str_starts_with($field, 'notes')
+                            || str_starts_with($field, 'remarks')
+                            || in_array($field, ['reserve1', 'reserve2', 'reserve5', 'summary', 'factory_desc'], true);
                         $options = [
                             'label' => false,
-                            'type' => $isNotes ? 'textarea' : 'text',
-                            'class' => 'form-control' . ($field === 'deadline' ? ' datepicker2' : ''),
+                            'type' => $isTextarea ? 'textarea' : 'text',
+                            'class' => 'form-control',
                             'style' => 'width:100%;',
                             'required' => in_array($field, ['client_code', 'tel'], true),
                         ];
                         if ($maxLength !== null) {
                             $options['maxlength'] = $maxLength;
                         }
-                        if ($isNotes) {
+                        if ($isTextarea) {
                             $options += ['rows' => 3, 'cols' => 5];
                         }
                         ?>

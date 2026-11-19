@@ -50,10 +50,9 @@ return function (RouteBuilder $routes): void {
     $routes->setRouteClass(DashedRoute::class);
 
     $routes->scope('/', function (RouteBuilder $builder): void {
-        /*
-         * Default route - connect '/' to homes index (legacy landing).
-         */
-        $builder->connect('/', ['controller' => 'Homes', 'action' => 'index']);
+        $builder->connect('/customers', ['controller' => 'Customers', 'action' => 'index']);
+        $builder->connect('/', ['controller' => 'Customers', 'action' => 'index']);
+        $builder->connect('/homes', ['controller' => 'Homes', 'action' => 'index']);
         $builder->connect('/core-settings', ['controller' => 'CoreSettings', 'action' => 'index']);
         $builder->connect('/mt-phonelists', ['controller' => 'MtPhonelists', 'action' => 'index']);
         $builder->connect('/mt-cids', ['controller' => 'MtCids', 'action' => 'index']);
@@ -64,6 +63,71 @@ return function (RouteBuilder $routes): void {
         $builder->connect('/imports', ['controller' => 'Imports', 'action' => 'index']);
         $builder->connect('/settings', ['controller' => 'Settings', 'action' => 'index']);
 
+        // Legacy CakePHP 2 URL compatibility.
+        $builder->connect('/mt_queues/index', ['controller' => 'MtQueues', 'action' => 'index']);
+        $builder->connect('/mt_statuses/index', ['controller' => 'MtStatuses', 'action' => 'index']);
+        $builder->connect('/mt_phonelists/index', ['controller' => 'MtPhonelists', 'action' => 'index']);
+        foreach (['mt_phonelists', 'mt-phonelists'] as $path) {
+            $builder->connect("/$path/sortupdate/{ids}", ['controller' => 'MtPhonelists', 'action' => 'sortupdate'])
+                ->setPatterns(['ids' => '\d+(?:-\d+)*-?'])
+                ->setPass(['ids']);
+        }
+        $builder->connect('/mt_cids/index', ['controller' => 'MtCids', 'action' => 'index']);
+        $builder->connect('/core_settings/index', ['controller' => 'CoreSettings', 'action' => 'index']);
+        $builder->connect('/homes/phoneList', ['controller' => 'Homes', 'action' => 'phoneList']);
+        $builder->connect('/homes/storeList', ['controller' => 'Homes', 'action' => 'storeList']);
+        $builder->connect('/homes/manualDialAPI', ['controller' => 'Homes', 'action' => 'manualDialApi']);
+        foreach (['Customers' => 'customerDial', 'Contacts' => 'contactDial'] as $source => $routeName) {
+            $path = '/' . strtolower($source) . '/manualDialAPI';
+            $target = ['controller' => 'Homes', 'action' => 'manualDialApi', 'dialFrom' => $source];
+            $builder->post($path, $target);
+            $builder->connect($path . '/{phone}', $target, ['_name' => $routeName, '_urldecode' => false]);
+        }
+
+        $builder->connect('/mt_queues/add', ['controller' => 'MtQueues', 'action' => 'add']);
+        foreach (['view', 'edit', 'delete'] as $action) {
+            $builder->connect("/mt_queues/$action/{id}", [
+                'controller' => 'MtQueues',
+                'action' => $action,
+            ])
+                ->setPatterns(['id' => '\d+'])
+                ->setPass(['id']);
+        }
+        $builder->connect('/mt_queues/sortupdate/{id}', [
+            'controller' => 'MtQueues',
+            'action' => 'sortupdate',
+        ])
+            ->setPatterns(['id' => '[\d-]+'])
+            ->setPass(['id']);
+
+        foreach (['view', 'edit', 'delete', 'sortupdate'] as $action) {
+            $builder->connect("/mt_statuses/$action/{id}", [
+                'controller' => 'MtStatuses',
+                'action' => $action,
+            ])
+                ->setPatterns(['id' => '[^/]+'])
+                ->setPass(['id']);
+        }
+
+        $builder->post('/contacts/callback_edit', ['controller' => 'Callbacks', 'action' => 'edit', 'legacyCallback' => true]);
+        foreach (['edit', 'delete'] as $action) {
+            $builder->connect("/contacts/callback_$action/{id}", [
+                'controller' => 'Callbacks', 'action' => $action, 'legacyCallback' => true,
+            ], ['_name' => 'legacyCallback' . ucfirst($action)])
+                ->setPatterns(['id' => '\d+'])
+                ->setPass(['id']);
+        }
+
+        foreach (['Contacts' => 'contacts', 'Customers' => 'customers'] as $controller => $path) {
+            foreach (['view', 'edit', 'delete'] as $action) {
+                $builder->connect("/$path/$action/{id}", [
+                    'controller' => $controller,
+                    'action' => $action,
+                ])
+                    ->setPatterns(['id' => '\d+'])
+                    ->setPass(['id']);
+            }
+        }
 
         /*
          * ...and connect the rest of 'Pages' controller's URLs.

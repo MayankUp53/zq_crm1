@@ -2,18 +2,7 @@
 $this->assign('title', '対応履歴詳細');
 $currentUser = $this->request->getAttribute('identity');
 $userAuth = $currentUser ? $currentUser->getOriginalData()->auth : null;
-$customerRows = [
-    ['得意先CD', 'client_code', '得意先支店CD', 'client_branch_code'],
-    ['得意先名', 'client_name', '得意先支店名', 'client_branch_name'],
-    ['TEL', 'tel', 'FAX', 'fax'],
-    ['顧客の担当者1電話', 'incharge1_phone', '顧客の担当者2電話）', 'incharge2_phone'],
-    ['顧客の担当者3電話', 'incharge3_phone', '顧客の担当者4電話）', 'incharge4_phone'],
-    ['住所１', 'addr1', '住所２', 'addr2'],
-    ['所属名', 'section_name', '営業担当者名', 'sales_person'],
-    ['締日', 'deadline', '備考1', 'notes1'],
-    ['備考2', 'notes2', '備考3', 'notes3'],
-    ['備考4', 'notes4', '', null],
-];
+$this->Form->setTemplates(['inputContainer' => '{{content}}']);
 ?>
 <div class="contact-view">
     <div class="panel panel-primary">
@@ -25,35 +14,124 @@ $customerRows = [
             </span>
         </div>
         <table class="table customer-details">
-            <colgroup><col style="width:8%"><col style="width:20%"><col style="width:8%"><col></colgroup>
             <tbody>
-                <?php foreach ($customerRows as [$leftLabel, $leftField, $rightLabel, $rightField]): ?>
-                    <tr>
-                        <td class="customer-label"><?= h($leftLabel) ?></td>
-                        <td><?= h($customer->{$leftField} ?? '') ?></td>
-                        <?php if ($rightField !== null): ?>
-                            <td class="customer-label"><?= h($rightLabel) ?></td>
-                            <td><?= h($customer->{$rightField} ?? '') ?></td>
-                        <?php else: ?>
-                            <td colspan="2"></td>
-                        <?php endif; ?>
-                    </tr>
-                <?php endforeach; ?>
+                <tr>
+                    <td width="15%" class="customer-label">キー＊</td>
+                    <td width="30%"><?= h($customer->client_code ?? $customer->client_cd ?? '') ?></td>
+                    <td width="15%" class="customer-label">拠点</td>
+                    <td colspan="3"><?= h($customer->base_name ?? '') ?></td>
+                </tr>
+                <tr>
+                    <td class="customer-label">得意先名（帳合先名）</td>
+                    <td><?= h($customer->book_name ?? '') ?></td>
+                    <td class="customer-label">複数口座CD</td>
+                    <td><?= h($customer->client_branch_code ?? '') ?></td>
+                </tr>
+                <tr>
+                    <td width="15%" class="customer-label">得意先CD</td>
+                    <td width="30%"><?= h($customer->reserve1 ?? '') ?></td>
+                    <td width="15%" class="customer-label">帳合先・納品先CD</td>
+                    <td colspan="3"><?= h($customer->reserve2 ?? '') ?></td>
+                </tr>
+                <tr>
+                    <td class="customer-label">住所1</td>
+                    <td><?= h($customer->addr1 ?? '') ?></td>
+                    <td class="customer-label">住所2</td>
+                    <td colspan="3"><?= h($customer->addr2 ?? '') ?></td>
+                </tr>
+                <tr>
+                    <td class="customer-label">FAX</td>
+                    <td><?= h($customer->fax ?? '') ?></td>
+                    <td class="customer-label">TEL＊</td>
+                    <td><?= !empty($customer->tel) ? $this->Form->postLink(
+                        (string)$customer->tel,
+                        ['_name' => 'contactDial', 'phone' => rawurlencode((string)$customer->tel)]
+                    ) : '' ?></td>
+                </tr>
+                <tr>
+                    <td class="customer-label">営業員CD</td>
+                    <td><?= h($customer->sales_staff_cd ?? '') ?></td>
+                    <td class="customer-label">サブ電話番号1</td>
+                    <td><?= h($customer->sub_phone1 ?? '') ?></td>
+                </tr>
+                <tr>
+                    <td class="customer-label">営業担当者名</td>
+                    <td><?= h($customer->sales_rep_name ?? '') ?></td>
+                    <td class="customer-label">サブ電話番号2</td>
+                    <td><?= h($customer->sub_phone2 ?? '') ?></td>
+                </tr>
+                <tr>
+                    <td class="customer-label">締日</td>
+                    <td><?= h($customer->closing_date ?? '') ?></td>
+                    <td class="customer-label">サブ電話番号3</td>
+                    <td><?= h($customer->sub_phone3 ?? '') ?></td>
+                </tr>
+                <tr>
+                    <td class="customer-label">回収区分</td>
+                    <td><?= h($customer->collection_cls ?? '') ?></td>
+                    <td class="customer-label">サブ電話番号4</td>
+                    <td><?= h($customer->sub_phone4 ?? '') ?></td>
+                </tr>
+                <tr>
+                    <td class="customer-label">ベッツダイレクト区分</td>
+                    <td><?= h($customer->direct_cls ?? '') ?></td>
+                    <td class="customer-label">サブ電話番号5</td>
+                    <td><?= h($customer->sub_phone5 ?? '') ?></td>
+                </tr>
                 <tr>
                     <td class="customer-label">登録日</td>
                     <td><?= h($customer->created?->format('Y-m-d H:i:s') ?? '') ?></td>
                     <td class="customer-label">登録者</td>
-                    <td><?= h($allUsersOpt[$customer->created_user_id] ?? '') ?></td>
+                    <td colspan="3"><?= h($allUsersOpt[$customer->created_user_id] ?? '') ?></td>
                 </tr>
                 <tr>
                     <td class="customer-label">更新日</td>
                     <td><?= h($customer->updated?->format('Y-m-d H:i:s') ?? '') ?></td>
                     <td class="customer-label">更新者</td>
-                    <td><?= h($allUsersOpt[$customer->updated_user_id] ?? '') ?></td>
+                    <td colspan="3"><?= h($allUsersOpt[$customer->updated_user_id] ?? '') ?></td>
                 </tr>
             </tbody>
         </table>
     </div>
+
+    <?= $this->Form->create($contact, ['url' => ['action' => 'edit', $contact->id], 'type' => 'post', 'class' => 'form contact-update-form']) ?>
+    <?= $this->Form->control('id', ['type' => 'hidden']) ?>
+    <?= $this->Form->control('customer_id', ['type' => 'hidden']) ?>
+    <div class="panel panel-warning">
+        <div class="panel-heading">
+            <h3 class="panel-title">対応履歴更新</h3>
+        </div>
+        <table class="table contact-update">
+            <tbody>
+                <tr>
+                    <td width="15%" class="update-label">概要</td>
+                    <td><?= $this->Form->control('summary', ['label' => false, 'type' => 'text', 'class' => 'form-control if100']) ?></td>
+                    <td class="update-label">種別</td>
+                    <td><?= $this->Form->control('queue_name', ['label' => false, 'type' => 'select', 'required' => false, 'options' => $queueOpt ?? [], 'value' => $queueSelectedValue ?? $contact->queue_name, 'empty' => '-----', 'class' => 'form-control if100']) ?></td>
+                </tr>
+                <tr>
+                    <td class="update-label">ステータス</td>
+                    <td><?= $this->Form->control('status', ['label' => false, 'type' => 'select', 'options' => $statusOpt ?? [], 'empty' => '-----', 'class' => 'form-control if100', 'required' => true]) ?></td>
+                    <td class="update-label"></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td class="update-label">対応内容</td>
+                    <td><?= $this->Form->control('detail', ['label' => false, 'type' => 'textarea', 'cols' => 20, 'rows' => 5, 'class' => 'form-control if100', 'style' => 'width:100%']) ?></td>
+                    <td class="update-label">メモ</td>
+                    <td><?= $this->Form->control('remark', ['label' => false, 'type' => 'textarea', 'cols' => 20, 'rows' => 5, 'class' => 'form-control if100', 'style' => 'width:100%']) ?></td>
+                </tr>
+            </tbody>
+        </table>
+        <div style="width:95%;margin-bottom:5px;margin-top:5px;" align="center" class="btn_margin">
+            <?php if ($userAuth !== null && (string)$userAuth !== '0'): ?>
+                <?= $this->Form->button('削　除', ['name' => 'delete', 'value' => '1', 'type' => 'submit', 'formnovalidate' => true, 'style' => 'width:150px;height:30px;cursor:pointer', 'class' => 'btn-danger btn-xs', 'onclick' => 'return confirm("対応履歴を削除します。よろしいですか？")']) ?>
+            <?php endif; ?>
+            <?= $this->Form->button('更　新', ['name' => 'update', 'value' => '1', 'type' => 'submit', 'style' => 'width:150px;height:30px;cursor:pointer', 'class' => 'btn-warning btn-xs EditButton']) ?>
+            <?= $this->Form->button('新規登録', ['name' => 'add', 'value' => '1', 'type' => 'submit', 'formnovalidate' => true, 'style' => 'width:150px;height:30px;cursor:pointer', 'class' => 'btn-info btn-xs']) ?>
+        </div>
+    </div>
+    <?= $this->Form->end() ?>
 
     <a id="anc"></a>
     <div class="panel panel-primary">
@@ -86,45 +164,6 @@ $customerRows = [
             </table>
         </div>
     </div>
-
-    <?= $this->Form->create($contact, ['url' => ['action' => 'edit', $contact->id], 'type' => 'post', 'class' => 'form contact-update-form']) ?>
-    <?= $this->Form->control('id', ['type' => 'hidden']) ?>
-    <?= $this->Form->control('customer_id', ['type' => 'hidden']) ?>
-    <div class="panel panel-warning">
-        <div class="panel-heading">
-            <h3 class="panel-title">対応履歴更新</h3>
-        </div>
-        <table class="table contact-update">
-            <tbody>
-                <tr>
-                    <td width="15%" class="update-label">概要</td>
-                    <td><?= $this->Form->control('summary', ['label' => false, 'type' => 'text', 'class' => 'form-control if100']) ?></td>
-                    <td class="update-label">ステータス</td>
-                    <td><?= $this->Form->control('status', ['label' => false, 'type' => 'select', 'options' => $statusOpt ?? [], 'empty' => '-----', 'class' => 'form-control if100', 'required' => true]) ?></td>
-                </tr>
-                <tr>
-                    <td class="update-label">店舗への連絡</td>
-                    <td><?= $this->Form->control('queue_name', ['label' => false, 'type' => 'select', 'required' => false, 'options' => $queueOpt ?? [], 'empty' => '-----', 'class' => 'form-control if100']) ?></td>
-                    <td class="update-label"></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td class="update-label">対応内容</td>
-                    <td><?= $this->Form->control('detail', ['label' => false, 'type' => 'textarea', 'cols' => 20, 'rows' => 5, 'class' => 'form-control if100', 'style' => 'width:100%']) ?></td>
-                    <td class="update-label">メモ</td>
-                    <td><?= $this->Form->control('remark', ['label' => false, 'type' => 'textarea', 'cols' => 20, 'rows' => 5, 'class' => 'form-control if100', 'style' => 'width:100%']) ?></td>
-                </tr>
-            </tbody>
-        </table>
-        <div style="width:95%;margin-bottom:5px;margin-top:5px;" align="center" class="btn_margin">
-            <?php if ($userAuth !== null && (string)$userAuth !== '0'): ?>
-                <?= $this->Form->button('削　除', ['name' => 'delete', 'value' => '1', 'type' => 'submit', 'formnovalidate' => true, 'style' => 'width:150px;height:30px;cursor:pointer', 'class' => 'btn-danger btn-xs', 'onclick' => 'return confirm("対応履歴を削除します。よろしいですか？")']) ?>
-            <?php endif; ?>
-            <?= $this->Form->button('更　新', ['name' => 'update', 'value' => '1', 'type' => 'submit', 'style' => 'width:150px;height:30px;cursor:pointer', 'class' => 'btn-warning btn-xs EditButton']) ?>
-            <?= $this->Form->button('新規登録', ['name' => 'add', 'value' => '1', 'type' => 'submit', 'formnovalidate' => true, 'style' => 'width:150px;height:30px;cursor:pointer', 'class' => 'btn-info btn-xs']) ?>
-        </div>
-    </div>
-    <?= $this->Form->end() ?>
 </div>
 <br><br>
 <style>

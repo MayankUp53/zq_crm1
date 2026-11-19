@@ -31,6 +31,16 @@ class MtQueuesController extends AppController
         $this->setListValue();
     }
 
+    public function view(?string $id = null)
+    {
+        $entry = $this->MtQueues->find()
+            ->where(['MtQueues.id' => $id, 'MtQueues.deleted IS' => null])
+            ->firstOrFail();
+
+        $this->set(compact('entry'));
+        $this->setListValue();
+    }
+
     public function add()
     {
         $entry = $this->MtQueues->newEmptyEntity();

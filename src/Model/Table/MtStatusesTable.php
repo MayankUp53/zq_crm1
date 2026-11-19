@@ -42,9 +42,13 @@ class MtStatusesTable extends Table
         // 状態 (active)
      $validator
     ->integer('active', '状態は整数で入力してください。')
-    ->requirePresence('active', 'create', '状態は必須です。')
-    ->notEmptyString('active', '状態を選択してください。')  // validation triggers if empty
+    ->allowEmptyString('active')
     ->inList('active', [0, 1], '状態は「有効」または「無効」を選択してください。');
+
+     $validator
+         ->integer('active_flg', '状態は整数で入力してください。')
+         ->allowEmptyString('active_flg')
+         ->inList('active_flg', [0, 1], '状態は「有効」または「無効」を選択してください。');
 
 
 

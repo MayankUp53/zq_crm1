@@ -1,6 +1,7 @@
 <?php
 $row = $coreSettings->first() ?: null;
 $id = $row?->id;
+$callerId = trim((string)$row?->customer_contact_dial_caller_id);
 ?>
 <div class="panel panel-primary">
     <div style="background-color:#d43f3a" class="panel-heading">
@@ -43,12 +44,17 @@ $id = $row?->id;
 
         <tr>
             <td style="vertical-align:middle;color:#ffffff;" bgcolor="#20b2aa">コール履歴表示件数</td>
-            <td><?= h($row->limit_value ?? '') ?>&nbsp;</td>
+            <td><?= h($row?->{$limitField} ?? '') ?>&nbsp;</td>
         </tr>
 
         <tr>
             <td style="vertical-align:middle;color:#ffffff;" bgcolor="#20b2aa">Manual Dial API URL</td>
             <td><?= h($row->dial_api_url ?? '') ?>&nbsp;</td>
+        </tr>
+
+        <tr>
+            <td style="vertical-align:middle;color:#ffffff;" bgcolor="#20b2aa">顧客・対応履歴からの発信通知番号</td>
+            <td><?= h($callerId !== '' ? $callerId : '未設定') ?>&nbsp;</td>
         </tr>
 
         <tr>

@@ -1,5 +1,7 @@
 <?php
 $this->assign('title', '対応履歴更新');
+$currentUser = $this->request->getAttribute('identity');
+$userAuth = $currentUser ? $currentUser->getOriginalData()->auth : null;
 ?>
 
 <div class="panel panel-warning">
@@ -36,7 +38,7 @@ $this->assign('title', '対応履歴更新');
                 'options' => $queueOpt ?? [],
                 'empty' => '-----',
                 'class' => 'form-control',
-                'value' => $contact->queue_name
+                'value' => $queueSelectedValue ?? $contact->queue_name
             ]) ?>
         </div>
 
@@ -86,12 +88,14 @@ $this->assign('title', '対応履歴更新');
             'class' => 'btn btn-info btn-xs',
             'style' => 'width:150px;height:30px;margin-bottom:5px;'
         ]) ?>
-        <?= $this->Form->postLink('削　除', ['action' => 'delete', $contact->id], [
-            'block' => 'contactDeleteForm',
-            'confirm' => '削除しますか？',
-            'class' => 'btn btn-danger btn-xs',
-            'style' => 'width:150px;height:30px;margin-bottom:5px;'
-        ]) ?>
+        <?php if ($userAuth !== null && (string)$userAuth !== '0'): ?>
+            <?= $this->Form->postLink('削　除', ['action' => 'delete', $contact->id], [
+                'block' => 'contactDeleteForm',
+                'confirm' => '削除しますか？',
+                'class' => 'btn btn-danger btn-xs',
+                'style' => 'width:150px;height:30px;margin-bottom:5px;'
+            ]) ?>
+        <?php endif; ?>
     </div>
 
     <?= $this->Form->end() ?>

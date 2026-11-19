@@ -24,6 +24,7 @@ class CoreSettingsController extends AppController
     {
         $coreSettings = $this->CoreSettings->find()
             ->where(['deleted IS' => null])
+            ->orderBy(['id' => 'ASC'])
             ->all();
 
         $this->set(compact('coreSettings'));
@@ -81,11 +82,12 @@ class CoreSettingsController extends AppController
     {
         $warning = $this->CallbackNotification->getNumOfWarning();
         $activeOpt = ['0' => '無効', '1' => '有効'];
+        $limitField = $this->CoreSettings->getCallHistoryLimitField();
         $opeOpt = $this->Users->find('list', keyField: 'id', valueField: 'user_name')
             ->where(['deleted IS' => null])
             ->orderBy(['id' => 'ASC'])
             ->toArray();
 
-        $this->set(compact('warning', 'activeOpt', 'opeOpt'));
+        $this->set(compact('warning', 'activeOpt', 'limitField', 'opeOpt'));
     }
 }

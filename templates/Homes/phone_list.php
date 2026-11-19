@@ -77,6 +77,12 @@ $(function () {
         }]
     });
 
+    function getParentPhoneField() {
+        var parentDocument = window.opener.document;
+        return parentDocument.getElementById(targetField)
+            || (targetField === 'tel' ? parentDocument.getElementById('HomeTel') : null);
+    }
+
     $('#dt tbody').on('click', 'button.sel_btn', function () {
 
         var data = table.row($(this).parents('tr')).data();
@@ -84,7 +90,7 @@ $(function () {
 
         if (window.opener && !window.opener.closed) {
 
-            var input = window.opener.document.getElementById(targetField);
+            var input = getParentPhoneField();
 
             if (input) {
                 input.value = phone;
@@ -118,7 +124,7 @@ $(function () {
         }
 
         if (window.opener && !window.opener.closed) {
-            var input = window.opener.document.getElementById(targetField);
+            var input = getParentPhoneField();
 
             if (input) {
                 var existing = input.value ? input.value.split(/[\s,;]+/).filter(Boolean) : [];

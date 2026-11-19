@@ -1,6 +1,6 @@
 <?php
 /**
- * Audio playback view for recorded calls (used in modal iframe).
+ * Audio playback view for recorded calls.
  */
 // Expected variables: $url (base API endpoint), $crtObjectId
 $audioUrl = $url . urlencode(json_encode(['crtObjectId' => $crtObjectId, 'targetFormat' => 'mp3']));
@@ -14,27 +14,13 @@ $audioUrl = $url . urlencode(json_encode(['crtObjectId' => $crtObjectId, 'target
   <style>
     body { margin:0; padding:8px; font-family:sans-serif; }
     audio { width:100%; }
-    .actions { margin-top:8px; text-align:right; }
-    .btn {
-      display:inline-block;
-      padding:4px 8px;
-      font-size:12px;
-      border:1px solid #ccc;
-      background:#f8f8f8;
-      color:#333;
-      text-decoration:none;
-      border-radius:3px;
-    }
   </style>
 </head>
 <body>
-  <audio controls>
+  <audio id="<?= h($id) ?>" preload="auto" controls>
     <source src="<?= h($audioUrl) ?>" type="audio/mpeg">
     お使いのブラウザは音声再生に対応していません。
   </audio>
 
-  <div class="actions">
-    <a class="btn" href="<?= h($audioUrl) ?>" target="_blank" rel="noopener">ダウンロード</a>
-  </div>
 </body>
 </html>

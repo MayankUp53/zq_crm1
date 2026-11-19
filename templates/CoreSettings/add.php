@@ -36,13 +36,13 @@
                 <td style="vertical-align:middle;color:#ffffff;" bgcolor="#ff8c00">Manual Dial API URL</td>
                 <td><?= $this->Form->control('dial_api_url', ['label' => false, 'div' => false, 'class' => 'form-control']) ?></td>
 
-                <td></td>
-                <td></td>
+                <td style="vertical-align:middle;color:#ffffff;" bgcolor="#ff8c00">顧客・対応履歴からの発信通知番号</td>
+                <td><?= $this->Form->control('customer_contact_dial_caller_id', ['label' => false, 'type' => 'text', 'maxlength' => 50, 'class' => 'form-control']) ?></td>
             </tr>
 
             <tr>
                 <td style="vertical-align:middle;color:#ffffff;" bgcolor="#ff8c00">コール履歴表示件数</td>
-                <td><?= $this->Form->control('limit_value', ['label' => false, 'div' => false, 'class' => 'form-control']) ?></td>
+                <td><?= $this->Form->control($limitField, ['label' => false, 'div' => false, 'class' => 'form-control']) ?></td>
 
                 <td style="vertical-align:middle;color:#ffffff;" bgcolor="#ff8c00">コールバック通知時間（分）</td>
                 <td><?= $this->Form->control('callback_notice_time', ['label' => false, 'div' => false, 'class' => 'form-control']) ?></td>

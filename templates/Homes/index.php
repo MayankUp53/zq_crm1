@@ -3,6 +3,7 @@
  * Homes/index
  * AmeyoJ Dashboard (Manual Dial + Call History)
  */
+$this->Html->css('https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap.min.css', ['block' => true]);
 ?>
 
 <div class="bs-docs-section clearfix">
@@ -65,6 +66,7 @@ function validateManualDial() {
                 'id' => 'tel',
                 'type' => 'text',
                 'placeholder' => '発信先TEL',
+                'value' => $dialPhone ?? '',
                 'class' => 'form-control',
             ]) ?>
         </td>
@@ -106,16 +108,30 @@ function validateManualDial() {
 <thead>
 <tr style="color:#fff;background:#46b8da;">
     <th>No.</th>
+    <th style="display:none">campaign_id</th>
+    <th style="display:none">call_id</th>
     <th>キャンペーン</th>
+    <th style="display:none">キューID</th>
     <th>種別</th>
     <th>キュー名</th>
+    <th style="display:none">電話番号</th>
     <th>発信元</th>
     <th>発信先</th>
+    <th style="display:none">lead_id</th>
+    <th style="display:none">lead_name</th>
+    <th style="display:none">システム結果</th>
     <th>コール結果</th>
     <th>転送先</th>
+    <th style="display:none">ユーザID</th>
     <th>ユーザ名</th>
     <th>開始日時</th>
+    <th style="display:none">終了日時</th>
+    <th style="display:none">呼出時間</th>
+    <th style="display:none">IVR時間</th>
     <th>通話時間</th>
+    <th style="display:none">保留時間</th>
+    <th style="display:none">待機時間</th>
+    <th style="display:none">後処理時間</th>
     <th>通録</th>
 </tr>
 </thead>
@@ -127,28 +143,48 @@ function validateManualDial() {
     <?php foreach ($calls as $row): ?>
         <tr>
             <td><?= h($row['row_number'] ?? '') ?></td>
+            <td style="display:none"><?= h($row['campaign_id'] ?? '') ?></td>
+            <td style="display:none"><?= h($row['call_id'] ?? '') ?></td>
             <td><?= h($row['campaign_name'] ?? '') ?></td>
+            <td style="display:none"><?= h($row['agent_queue_id'] ?? '') ?></td>
             <td><?= h($row['call_type'] ?? '') ?></td>
             <td><?= h($row['agent_queue_name'] ?? '') ?></td>
-            <td><?= h($row['srcphone'] ?? '') ?></td>
+            <td style="display:none"><?= h($row['phone'] ?? '') ?></td>
+            <td>
+                <?php if (!empty($row['phone'])): ?>
+                    <?= $this->Html->link($row['srcphone'] ?? '', ['controller' => 'Customers', 'action' => 'jump', $row['phone']]) ?>
+                <?php else: ?>
+                    <?= h($row['srcphone'] ?? '') ?>
+                <?php endif; ?>
+            </td>
             <td><?= h($row['dstphone'] ?? '') ?></td>
+            <td style="display:none"><?= h($row['lead_id'] ?? '') ?></td>
+            <td style="display:none"><?= h($row['lead_name'] ?? '') ?></td>
+            <td style="display:none"><?= h($row['system_disposition'] ?? '') ?></td>
             <td><?= h($row['disposition_code'] ?? '') ?></td>
             <td><?= h($row['transfer_to'] ?? '') ?></td>
+            <td style="display:none"><?= h($row['user_id'] ?? '') ?></td>
             <td><?= h($row['user_name'] ?? '') ?></td>
             <td><?= h(isset($row['call_originate_time']) ? substr($row['call_originate_time'],0,16) : '') ?></td>
+            <td style="display:none"><?= h(isset($row['call_end_time']) ? substr($row['call_end_time'],0,16) : '') ?></td>
+            <td style="display:none"><?= h($row['ringing_time'] ?? '') ?></td>
+            <td style="display:none"><?= h($row['ivr_time'] ?? '') ?></td>
             <td><?= h($row['talk_time'] ?? '') ?></td>
+            <td style="display:none"><?= h($row['hold_time'] ?? '') ?></td>
+            <td style="display:none"><?= h($row['wait_time'] ?? '') ?></td>
+            <td style="display:none"><?= h($row['wrap_time'] ?? '') ?></td>
             <td>
                 <?php if (!empty($row['call_id']) && !empty($row['crt_object_id'])): ?>
-                    <button type="button" class="btn btn-xs btn-default"
-                        onclick="openPlayWindow(<?= json_encode((string)$row['call_id']) ?>, <?= json_encode((string)$row['crt_object_id']) ?>);">
-                        再生
-                    </button>
+                    <?= $this->Html->link('再生', ['action' => 'play', (string)$row['call_id'], (string)$row['crt_object_id']], [
+                        'class' => 'btn btn-xs btn-default',
+                        'target' => '_blank',
+                        'rel' => 'noopener',
+                        'onclick' => "window.open(this.href, 'play', 'width=310,height=80,noopener'); return false;",
+                    ]) ?>
                 <?php endif; ?>
             </td>
         </tr>
     <?php endforeach; ?>
-<?php else: ?>
-<tr><td colspan="12">データなし</td></tr>
 <?php endif; ?>
 </tbody>
 
@@ -160,21 +196,28 @@ function validateManualDial() {
 <!-- ===================================================== -->
 <!-- DATATABLE -->
 <!-- ===================================================== -->
-<?php $this->start('script'); ?>
+<?= $this->Html->script([
+    'https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js',
+    'https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
+    'https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js',
+], ['block' => true]) ?>
+<?php $this->append('script'); ?>
 <script>
-function openPlayWindow(callId, crtObjectId) {
-    var url = <?= json_encode((string)$this->Url->build(['controller' => 'Homes', 'action' => 'play'])) ?> +
-        '/' + encodeURIComponent(callId) + '/' + encodeURIComponent(crtObjectId);
-    window.open(url, 'play', 'width=450,height=180');
-}
-
 jQuery(function($){
     $('#callsTable').DataTable({
-        pageLength: 25,
+        autoWidth: false,
+        pageLength: 20,
         lengthChange: false,
-        ordering: true,
-        responsive: true,
-         dom: '<"row"<"col-sm-6"f><"col-sm-6"l>>t<"row"<"col-sm-6"i><"col-sm-6"p>>'
+        order: [[0, 'asc']],
+        language: {url: 'https://cdn.datatables.net/plug-ins/1.10.25/i18n/Japanese.json'},
+        dom: '<"row"<"col-sm-6"f><"col-sm-6 text-right"B>>t<"row"<"col-sm-6"i><"col-sm-6"p>>',
+        buttons: [{
+            extend: 'excelHtml5',
+            text: 'Excel DL',
+            title: <?= json_encode('コール履歴_' . date('YmdHi')) ?>,
+            exportOptions: {columns: [0, 3, 5, 6, 8, 9, 13, 14, 16, 17, 21]}
+        }]
     });
 });
 </script>

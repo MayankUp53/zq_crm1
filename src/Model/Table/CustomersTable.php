@@ -131,12 +131,18 @@ class CustomersTable extends Table
         $validator
             ->requirePresence('client_code', 'create')
             ->notEmptyString('client_code', '得意先CD は必須です。入力してください。')
-            ->maxLength('client_code', 6);
+            ->maxLength('client_code', 100);
         $validator
             ->requirePresence('tel', 'create')
             ->notEmptyString('tel', 'TEL は必須です。入力してください。');
 
         return $validator;
+    }
+
+    public function validationImport(Validator $validator): Validator
+    {
+        // The importer checks the key enforced by the deployment's customer table.
+        return $this->validationDefault($validator)->remove('client_cd', 'unique');
     }
 
     /**

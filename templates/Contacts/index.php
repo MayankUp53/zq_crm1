@@ -2,16 +2,21 @@
 $search = $searchData ?? [];
 $currentUser = $this->request->getAttribute('identity');
 $userAuth = $currentUser ? ($currentUser->getOriginalData()->auth ?? null) : null;
+$statusSearchValue = $search['status'] ?? '';
+if (is_array($statusSearchValue)) {
+    $statusSearchValue = $statusSearchValue === [] ? '' : (string)reset($statusSearchValue);
+}
+$hasAdditionalSearch = !empty($search['client_name']) || !empty($search['client_branch_name']);
+$this->Form->setTemplates(['inputContainer' => '{{content}}']);
 ?>
 <div class="panel panel-primary">
     <div class="panel-heading">
         <h3 class="panel-title">対応履歴検索条件</h3>
     </div>
     <?= $this->Form->create(null, ['url' => ['action' => 'index'], 'type' => 'post']) ?>
-    <table class="table">
+    <table class="table contact-search">
+      <colgroup><col style="width:10%"><col style="width:20%"><col style="width:10%"><col style="width:25%"><col style="width:10%"><col style="width:25%"></colgroup>
       <tbody>
-
-    <!-- Legacy history search fields -->
     <tr>
         <td class="search-label">TEL</td>
         <td>
@@ -22,29 +27,15 @@ $userAuth = $currentUser ? ($currentUser->getOriginalData()->auth ?? null) : nul
             ]) ?>
         </td>
 
-        <td class="search-label">得意先名</td>
-        <td>
-            <?= $this->Form->control('Search.client_name', [
-                'label' => false,
-                'value' => $search['client_name'] ?? '',
-                'class' => 'form-control'
-            ]) ?>
-        </td>
-
-        <td class="search-label">得意先支店名</td>
-        <td>
-            <?= $this->Form->control('Search.client_branch_name', [
-                'label' => false,
-                'value' => $search['client_branch_name'] ?? '',
-                'class' => 'form-control'
-            ]) ?>
-        </td>
+        <td class="search-label">拠点</td>
+        <td><?= $this->Form->control('Search.base_name', ['label' => false, 'value' => $search['base_name'] ?? '', 'class' => 'form-control']) ?></td>
+        <td class="search-label">得意先名（帳合先）</td>
+        <td><?= $this->Form->control('Search.book_name', ['label' => false, 'value' => $search['book_name'] ?? '', 'class' => 'form-control']) ?></td>
     </tr>
 
-    <!-- Address and OP -->
     <tr>
-        <td class="search-label">住所</td>
-        <td>
+        <td class="search-label" rowspan="3">住所</td>
+        <td rowspan="3">
             <?= $this->Form->control('Search.addr', [
                 'label' => false,
                 'type' => 'text',
@@ -64,15 +55,16 @@ $userAuth = $currentUser ? ($currentUser->getOriginalData()->auth ?? null) : nul
                 'size' => 6,
             ]) ?>
         </td>
-        <td class="search-label" rowspan="3">ステータス</td>
-        <td rowspan="3">
-            <?= $this->Form->control('Search.status', [
+        <td class="search-label" rowspan="4">種別</td>
+        <td rowspan="4">
+            <?= $this->Form->control('Search.queue_name', [
                 'label' => false,
                 'type' => 'select',
                 'multiple' => true,
-                'options' => $statusOpt ?? [],
-                'value' => $search['status'] ?? [],
-                'class' => 'form-control'
+                'options' => $queueOpt ?? [],
+                'value' => $search['queue_name'] ?? [],
+                'class' => 'form-control',
+                'size' => 9,
             ]) ?>
         </td>
     </tr>
@@ -98,17 +90,29 @@ $userAuth = $currentUser ? ($currentUser->getOriginalData()->auth ?? null) : nul
     </tr>
     <tr>
         <td class="search-label">登録日（From）</td>
-        <td><?= $this->Form->control('Search.created_from', ['label' => false, 'value' => $search['created_from'] ?? '', 'class' => 'form-control datepicker']) ?></td>
+        <td><?= $this->Form->control('Search.created_from', ['label' => false, 'type' => 'text', 'size' => 10, 'value' => $search['created_from'] ?? '', 'class' => 'form-control datepicker']) ?></td>
         <td class="search-label">更新日（From）</td>
-        <td><?= $this->Form->control('Search.updated_from', ['label' => false, 'value' => $search['updated_from'] ?? '', 'class' => 'form-control datepicker']) ?></td>
-        <td></td><td></td>
+        <td><?= $this->Form->control('Search.updated_from', ['label' => false, 'type' => 'text', 'size' => 10, 'value' => $search['updated_from'] ?? '', 'class' => 'form-control datepicker']) ?></td>
     </tr>
     <tr>
         <td class="search-label">登録日（To）</td>
-        <td><?= $this->Form->control('Search.created_to', ['label' => false, 'value' => $search['created_to'] ?? '', 'class' => 'form-control datepicker']) ?></td>
+        <td><?= $this->Form->control('Search.created_to', ['label' => false, 'type' => 'text', 'size' => 10, 'value' => $search['created_to'] ?? '', 'class' => 'form-control datepicker']) ?></td>
         <td class="search-label">更新日（To）</td>
-        <td><?= $this->Form->control('Search.updated_to', ['label' => false, 'value' => $search['updated_to'] ?? '', 'class' => 'form-control datepicker']) ?></td>
-        <td></td><td></td>
+        <td><?= $this->Form->control('Search.updated_to', ['label' => false, 'type' => 'text', 'size' => 10, 'value' => $search['updated_to'] ?? '', 'class' => 'form-control datepicker']) ?></td>
+        <td class="search-label">ステータス</td>
+        <td><?= $this->Form->control('Search.status', [
+            'label' => false,
+            'type' => 'select',
+            'options' => $statusOpt ?? [],
+            'value' => $statusSearchValue,
+            'empty' => '-----',
+            'class' => 'form-control',
+        ]) ?></td>
+    </tr>
+    <tr>
+        <td></td><td></td><td></td><td></td>
+        <td class="search-label">メモ</td>
+        <td><?= $this->Form->control('Search.remark', ['label' => false, 'value' => $search['remark'] ?? '', 'class' => 'form-control']) ?></td>
     </tr>
 
 </tbody>
@@ -124,6 +128,20 @@ $userAuth = $currentUser ? ($currentUser->getOriginalData()->auth ?? null) : nul
             <?= $this->Form->button('検索結果を出力', ['name' => 'download', 'value' => '1', 'type' => 'submit', 'class' => 'btn-success btn-xs', 'style' => 'width:150px;height:30px;cursor:pointer']) ?>
         <?php endif; ?>
     </div>
+    <details class="additional-search" <?= $hasAdditionalSearch ? 'open' : '' ?>>
+        <summary>追加検索条件</summary>
+        <table class="table">
+            <tbody>
+                <tr>
+                    <td class="search-label">得意先名</td>
+                    <td><?= $this->Form->control('Search.client_name', ['label' => false, 'value' => $search['client_name'] ?? '', 'class' => 'form-control']) ?></td>
+                    <td class="search-label">得意先支店名</td>
+                    <td><?= $this->Form->control('Search.client_branch_name', ['label' => false, 'value' => $search['client_branch_name'] ?? '', 'class' => 'form-control']) ?></td>
+                    <td colspan="2"></td>
+                </tr>
+            </tbody>
+        </table>
+    </details>
     <?= $this->Form->end() ?>
 </div>
 
@@ -139,14 +157,12 @@ $userAuth = $currentUser ? ($currentUser->getOriginalData()->auth ?? null) : nul
 
             <thead>
                 <tr height="35" bgcolor="#20b2aa" style="vertical-align:middle;color:#ffffff;">
-                    <th width="5%">得意先CD</th>
-                    <th width="5%">得意先支店CD</th>
+                    <th width="5%">ステータス</th>
+                    <th width="5%">種別</th>
                     <th width="7%">TEL</th>
-                    <th width="10%">得意先名</th>
-                    <th width="10%">得意先支店名</th>
-                    <th width="10%">営業担当者名</th>
+                    <th width="10%">拠点名</th>
+                    <th width="12%">得意先名（帳合先）</th>
                     <th width="10%">概要</th>
-                    <th width="8%">ステータス</th>
                     <th width="12%">住所</th>
                     <th width="8%">担当</th>
                     <th width="8%">登録日</th>
@@ -161,12 +177,14 @@ $userAuth = $currentUser ? ($currentUser->getOriginalData()->auth ?? null) : nul
                                                             $row->id ?? ''
                                                         ]) ?>'">
 
-                        <td><?= h($row->customer->client_code ?? $row->customer->client_cd ?? '') ?></td>
-                        <td><?= h($row->customer->client_branch_code ?? '') ?></td>
-                        <td><?= h($row->customer->tel_only ?? $row->customer->tel ?? '') ?></td>
-                        <td><?= h($row->customer->client_name ?? '') ?></td>
-                        <td><?= h($row->customer->client_branch_name ?? '') ?></td>
-                        <td><?= h($row->customer->sales_person ?? '') ?></td>
+                        <td><?= h($statusOpt[(string)$row->status] ?? $statusOpt[(int)$row->status] ?? $row->status ?? '') ?></td>
+                        <td><?= h($queueOpt[$row->queue_name] ?? $row->queue_name ?? '') ?></td>
+                        <td><?= !empty($row->customer->tel) ? $this->Form->postLink(
+                            (string)$row->customer->tel,
+                            ['_name' => 'contactDial', 'phone' => rawurlencode((string)$row->customer->tel)]
+                        ) : h($row->customer->tel_only ?? '') ?></td>
+                        <td><?= h($row->customer->base_name ?? '') ?></td>
+                        <td><?= h($row->customer->book_name ?? $row->customer->client_name ?? '') ?></td>
 
                         <?php
                         $overviewValue = $row->summary ?? $row->overview ?? '';
@@ -175,10 +193,8 @@ $userAuth = $currentUser ? ($currentUser->getOriginalData()->auth ?? null) : nul
                             $row->customer->addr2 ?? '',
                             $row->customer->addr3 ?? '',
                         ], static fn($value) => $value !== '' && $value !== null));
-                        $statusKey = (string)$row->status;
                         ?>
                         <td><?= h(mb_strlen((string)$overviewValue) > 20 ? mb_substr((string)$overviewValue, 0, 20) . '...' : (string)$overviewValue) ?></td>
-                        <td><?= h($statusOpt[$statusKey] ?? $statusOpt[(int)$statusKey] ?? $row->status ?? '') ?></td>
                         <td><?= h(mb_strlen((string)$addressValue) > 17 ? mb_substr((string)$addressValue, 0, 17) . '...' : $addressValue) ?></td>
                         <td width="8%"><?= h($row->op_incharge) ?></td>
                         <td width="8%"><?= $row->created ? h($row->created->format('Y-m-d H:i')) : '' ?></td>
@@ -210,4 +226,25 @@ $userAuth = $currentUser ? ($currentUser->getOriginalData()->auth ?? null) : nul
         color: #ffffff;
         background-color: #149c82;
     }
+    .additional-search {
+        width: 95%;
+        margin: 0 auto 8px;
+    }
+    .additional-search summary {
+        color: #149c82;
+        cursor: pointer;
+    }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        if (window.jQuery && jQuery.fn.datepicker) {
+            jQuery('.contact-search .datepicker').datepicker({
+                changeMonth: true,
+                changeYear: true,
+                yearRange: '-100:+0',
+                dateFormat: 'yy-mm-dd'
+            });
+        }
+    });
+</script>

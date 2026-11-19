@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use Cake\Http\Exception\BadRequestException;
 use Cake\Log\Log;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -137,59 +138,98 @@ class MtPhonelistsController extends AppController
 
 
 
+    public function sortupdate(?string $order = null)
+    {
+        $this->request->allowMethod(['get', 'post']);
+        if ($order === null || !preg_match('/^\d+(?:-\d+)*-?$/D', $order)) {
+            throw new BadRequestException();
+        }
+        if ($this->request->is('get')) {
+            $this->autoSubmitLegacyAction(['action' => 'sortupdate', $order], __('更新'));
+            return;
+        }
+
+        $ids = explode('-', rtrim($order, '-'));
+        try {
+            $this->savePhoneListOrder($ids);
+            $this->Flash->success(__('表示順を更新しました。'));
+        } catch (BadRequestException $exception) {
+            $this->Flash->error($exception->getMessage());
+        } catch (\Exception $exception) {
+            Log::error('Phone list reorder failed: ' . $exception->getMessage());
+            $this->Flash->error(__('表示順の保存に失敗しました。'));
+        }
+
+        return $this->redirect(['action' => 'index']);
+    }
+
     public function updateOrder()
     {
         $this->request->allowMethod(['post']);
+        $items = $this->request->getData('orderData');
+        if ($items === null) {
+            $data = json_decode((string)$this->request->getBody(), true);
+            $items = $data['orderData'] ?? [];
+        }
 
         try {
-            // Read JSON payload from request body
-            $data = json_decode($this->request->getBody()->getContents(), true);
-            Log::debug('AJAX payload: ' . json_encode($data));
-
-            if (empty($data['orderData'])) {
-                throw new \Exception('表示順データを受信できませんでした。');
-            }
-
-            $mtPhonelistsTable = $this->getTableLocator()->get('MtPhonelists');
-
-            // STEP 1: temporary negative disp_cd to avoid unique conflicts
-            $entities = [];
-            foreach ($data['orderData'] as $index => $item) {
-                $entity = $mtPhonelistsTable->get($item['id']);
-                $entity->disp_cd = - ($index + 1);
-                $entities[] = $entity;
-            }
-            $mtPhonelistsTable->saveMany($entities, ['atomic' => true]);
-
-            // STEP 2: assign final sequential numbers
-            $entities = [];
-            foreach ($data['orderData'] as $index => $item) {
-                $entity = $mtPhonelistsTable->get($item['id']);
-                $entity->disp_cd = $index + 1;
-                $entities[] = $entity;
-            }
-            if (!$mtPhonelistsTable->saveMany($entities, ['atomic' => true])) {
-                $errors = [];
-                foreach ($entities as $e) {
-                    $errors[$e->id] = $e->getErrors();
-                }
-                Log::error('SaveMany failed: ' . json_encode($errors));
-                throw new \Exception('表示順の保存に失敗しました。ログを確認してください。');
-            }
-
-            // Success response
-            $this->set(['message' => '表示順を更新しました。']);
-            $this->viewBuilder()->setOption('serialize', ['message']);
-        } catch (\Exception $e) {
-            Log::error('updateOrder failed: ' . $e->getMessage());
-
-            $this->response = $this->response->withStatus(500);
-            $this->set([
-                'message' => '表示順の保存に失敗しました。',
-                'error' => $e->getMessage()
-            ]);
-            $this->viewBuilder()->setOption('serialize', ['message', 'error']);
+            $ids = is_array($items) ? array_map(static fn($item) => $item['id'] ?? null, $items) : [];
+            $this->savePhoneListOrder($ids);
+            $payload = ['message' => __('表示順を更新しました。')];
+            $status = 200;
+        } catch (BadRequestException $exception) {
+            $payload = ['message' => __('表示順の保存に失敗しました。'), 'error' => $exception->getMessage()];
+            $status = 500;
+        } catch (\Exception $exception) {
+            Log::error('Phone list reorder failed: ' . $exception->getMessage());
+            $payload = [
+                'message' => __('表示順の保存に失敗しました。'),
+                'error' => __('表示順の保存に失敗しました。ログを確認してください。'),
+            ];
+            $status = 500;
         }
+
+        return $this->getResponse()->withType('json')->withStatus($status)
+            ->withStringBody(json_encode($payload, JSON_THROW_ON_ERROR));
+    }
+
+    private function savePhoneListOrder(array $ids): void
+    {
+        foreach ($ids as $id) {
+            if (!(is_int($id) || is_string($id)) || !ctype_digit((string)$id) || (int)$id < 1) {
+                throw new BadRequestException(__('表示順データを確認してください。'));
+            }
+        }
+        $ids = array_values(array_map('intval', $ids));
+        if (!$ids || count($ids) !== count(array_unique($ids))) {
+            throw new BadRequestException(__('表示順データを確認してください。'));
+        }
+
+        $this->MtPhonelists->getConnection()->transactional(function () use ($ids): void {
+            $entries = $this->MtPhonelists->find()
+                ->where(['id IN' => $ids, 'deleted IS' => null])
+                ->all()
+                ->indexBy('id')
+                ->toArray();
+            if (count($entries) !== count($ids)) {
+                throw new BadRequestException(__('指定された電話帳データが見つかりません。'));
+            }
+
+            $minimumQuery = $this->MtPhonelists->find();
+            $minimum = (int)$minimumQuery
+                ->select(['minimum' => $minimumQuery->func()->min('disp_cd')])
+                ->first()->minimum;
+            $temporaryRank = min(0, $minimum);
+            foreach ($entries as $entry) {
+                $entry->disp_cd = --$temporaryRank;
+            }
+            $this->MtPhonelists->saveManyOrFail($entries, ['checkRules' => false]);
+
+            foreach ($ids as $index => $id) {
+                $entries[$id]->disp_cd = $index + 1;
+            }
+            $this->MtPhonelists->saveManyOrFail($entries, ['checkRules' => false]);
+        });
     }
 
 

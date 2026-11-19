@@ -7,26 +7,8 @@
 
     <table class="table table-hover">
         <tbody>
-            <!-- 表示順 -->
             <tr>
-                <td width="25%" style="vertical-align:middle;color:#ffffff;" bgcolor="#ff8c00">
-                    表示順
-                </td>
-                <td>
-                    <?= $this->Form->control('disp_cd', [
-                        'label' => false,
-                        'div'   => false,
-                        'class' => 'form-control',
-                        'id'    => 'disp_cd',
-                        'type'  => 'number',
-                    ]) ?>
-                    <?= $this->Form->error('disp_cd') ?>
-                </td>
-            </tr>
-
-            <!-- 名称 -->
-            <tr>
-                <td width="25%" style="vertical-align:middle;color:#ffffff;" bgcolor="#ff8c00">
+                <td width="25%" style="vertical-align:middle;color:#ffffff;" bgcolor="#4169E1">
                     *名称
                 </td>
                 <td>
@@ -43,11 +25,11 @@
 
             <!-- 状態 -->
         <tr>
-    <td width="25%" style="vertical-align:middle;color:#ffffff;" bgcolor="#ff8c00">
+    <td width="25%" style="vertical-align:middle;color:#ffffff;" bgcolor="#4169E1">
         状態
     </td>
      <td>
-        <?= $this->Form->control('active', [
+        <?= $this->Form->control(($activeField ?? 'active'), [
             'label' => false,
             'div'   => false,
             'class' => 'form-control',
@@ -84,10 +66,11 @@
 document.addEventListener("DOMContentLoaded", function () {
     const form = document.getElementById("statusForm");
     const submitBtn = document.getElementById("submitBtn");
+    const activeControl = form.querySelector('[name="active"], [name="active_flg"]');
 
     submitBtn.addEventListener("click", function (e) {
         const itemName = document.getElementById("item_name").value.trim();
-        const isActive = document.getElementById("active").value;
+        const isActive = activeControl ? activeControl.value : '';
 
         if (itemName === "") {
             alert("名称は必須です。");

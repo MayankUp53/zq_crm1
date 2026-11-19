@@ -8,50 +8,68 @@
 <head>
     <meta charset="utf-8">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.16/css/dataTables.bootstrap.min.css">
 </head>
 <body>
-    <div class="panel panel-info">
+    <div class="panel panel-primary">
         <div class="panel-heading">
             <h3 class="panel-title">店舗一覧</h3>
         </div>
-        <div class="list-group">
-            <?php foreach ($mtPhonelists as $row): ?>
-                <button type="button" class="list-group-item store-select">
-                    <?= h($row->item_name) ?>
-                </button>
-            <?php endforeach; ?>
-            <?php if (count($mtPhonelists) === 0): ?>
-                <div class="list-group-item text-muted">表示できる店舗がありません。</div>
-            <?php endif; ?>
-        </div>
+        <table id="storeList" class="table table-striped table-hover">
+            <thead>
+                <tr style="color:#fff;background:#20b2aa">
+                    <th scope="col">名称</th>
+                    <th scope="col">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($mtPhonelists as $row): ?>
+                    <tr>
+                        <td><?= h($row->item_name) ?></td>
+                        <td><button type="button" class="btn btn-xs btn-info store-select">選択</button></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
     </div>
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.16/js/dataTables.bootstrap.min.js"></script>
     <script>
-        document.querySelectorAll('.store-select').forEach(function(button) {
-            button.addEventListener('click', function() {
-                if (window.opener && !window.opener.closed) {
-                    var storeName = button.textContent.trim();
-                    var input = window.opener.document.getElementById('summary')
-                        || window.opener.document.getElementById('ContactSummary');
-                    if (!input) {
-                        input = window.opener.document.querySelector('[name="summary"], [name="Contact[summary]"]');
+        var storeTable = document.getElementById('storeList');
+        storeTable.addEventListener('click', function(event) {
+            var button = event.target.closest('.store-select');
+            if (!button) {
+                return;
+            }
+
+            if (window.opener && !window.opener.closed) {
+                var storeName = button.closest('tr').cells[0].textContent.trim();
+                var parentDocument = window.opener.document;
+                var input = parentDocument.getElementById('summary')
+                    || parentDocument.getElementById('ContactSummary')
+                    || parentDocument.querySelector('[name="summary"], [name="Contact[summary]"]');
+
+                if (input) {
+                    if (input.tagName === 'SELECT' && !Array.prototype.some.call(input.options, function(option) {
+                        return option.value === storeName;
+                    })) {
+                        input.add(new window.opener.Option(storeName, storeName));
                     }
-                    if (input) {
-                        if (input.tagName === 'SELECT') {
-                            var exists = Array.prototype.some.call(input.options, function(option) {
-                                return option.value === storeName;
-                            });
-                            if (!exists) {
-                                input.add(new window.opener.Option(storeName, storeName));
-                            }
-                            input.value = storeName;
-                        } else {
-                            input.value = storeName;
-                        }
-                        input.dispatchEvent(new Event('input', { bubbles: true }));
-                        input.dispatchEvent(new Event('change', { bubbles: true }));
-                    }
+                    input.value = storeName;
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
                 }
-                window.close();
+            }
+            window.close();
+        });
+
+        jQuery(function($) {
+            $(storeTable).DataTable({
+                dom: '<"pull-left"f><"pull-right"l>ti<"pull-left"p>',
+                order: [[0, 'asc']],
+                language: {url: 'https://cdn.datatables.net/plug-ins/1.10.25/i18n/Japanese.json'},
+                columnDefs: [{ targets: 1, orderable: false, searchable: false }]
             });
         });
     </script>

@@ -23,6 +23,7 @@ class MtStatusesController extends AppController
 public function index()
 {
     // Fetch statuses
+    $activeField = $this->activeStatusField();
     $mtStatuses = $this->MtStatuses->find()
         ->where(['deleted IS' => null])
         ->orderBy(['disp_cd' => 'ASC'])
@@ -38,9 +39,25 @@ public function index()
     foreach ($mtStatuses as $key => $row) {
         $mtStatuses[$key]['created_user_name'] = $users[$row['created_user_id']] ?? '-';
         $mtStatuses[$key]['updated_user_name'] = $users[$row['updated_user_id']] ?? '-';
+        $mtStatuses[$key]['active_value'] = (int)($row[$activeField] ?? 0);
     }
 
-    $this->set(compact('mtStatuses'));
+    $this->set(compact('mtStatuses', 'activeField'));
+    $this->setListValue();
+}
+
+public function view(?string $id = null)
+{
+    $mtStatus = $this->MtStatuses->find()
+        ->where(['MtStatuses.id' => $id, 'deleted IS' => null])
+        ->firstOrFail();
+
+    $opeOpt = $this->Users->find('list', keyField: 'id', valueField: 'user_name')
+        ->orderBy(['id' => 'ASC'])
+        ->toArray();
+
+    $this->set(compact('mtStatus', 'opeOpt'));
+    $this->setListValue();
 }
 
 
@@ -51,7 +68,12 @@ public function add()
     $entry = $this->MtStatuses->newEmptyEntity();
     if ($this->request->is('post')) {
         $data = $this->request->getData();
-
+        $activeField = $this->activeStatusField();
+        $activeValue = $data['active'] ?? $data['active_flg'] ?? null;
+        unset($data['active'], $data['active_flg']);
+        if ($activeValue !== null && $activeValue !== '') {
+            $data[$activeField] = (int)$activeValue;
+        }
 
         if (empty($data['disp_cd'])) {
             $maxDisp = $this->MtStatuses->find()
@@ -60,11 +82,6 @@ public function add()
                 ->max_disp ?? 0;
             $data['disp_cd'] = $maxDisp + 1;
         }
-            // Convert empty string from placeholder to null
-    if (isset($data['active']) && $data['active'] === '') {
-        $data['active'] = null;
-    }
-
         $now = date('Y-m-d H:i:s');
         $userId = $this->getCurrentUser()?->id ?? 0;
 
@@ -102,12 +119,15 @@ public function edit(?string $id = null)
 
     if ($this->request->is(['patch', 'post', 'put'])) {
         $data = $this->request->getData();
+        $activeField = $this->activeStatusField();
+        $activeValue = $data['active'] ?? $data['active_flg'] ?? null;
+        unset($data['active'], $data['active_flg']);
 
         // Only patch relevant fields
         $data = [
             'item_name' => $data['item_name'] ?? $entry->item_name,
             'disp_cd'   => $data['disp_cd'] ?? $entry->disp_cd,
-            'active' => isset($data['active']) ? $data['active'] : 0, // default to 無効 if not set
+            $activeField => $activeValue !== null && $activeValue !== '' ? (int)$activeValue : 0,
             'updated'   => date('Y-m-d H:i:s'),
             'updated_user_id' => $this->getCurrentUser()?->id ?? 0
         ];
@@ -166,15 +186,27 @@ public function edit(?string $id = null)
         return $this->redirect(['action' => 'index']);
     }
 
+    protected function activeStatusField(): string
+    {
+        $schema = $this->MtStatuses->getConnection()
+            ->getSchemaCollection()
+            ->describe($this->MtStatuses->getTable());
+
+        return $schema->hasColumn('active')
+            ? 'active'
+            : 'active_flg';
+    }
+
     protected function setListValue(): void
     {
         $warning = $this->CallbackNotification->getNumOfWarning();
         $activeOpt = ['0' => '無効', '1' => '有効'];
+        $activeField = $this->activeStatusField();
         $opeOpt = $this->Users->find('list', keyField: 'id', valueField: 'user_name')
             ->where(['deleted IS' => null])
             ->orderBy(['id' => 'ASC'])
             ->toArray();
 
-        $this->set(compact('warning', 'activeOpt', 'opeOpt'));
+        $this->set(compact('warning', 'activeOpt', 'activeField', 'opeOpt'));
     }
 }

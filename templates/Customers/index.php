@@ -6,6 +6,19 @@
  */
 $currentUser = $this->request->getAttribute('identity');
 $search = $searchData ?? [];
+$additionalSearchKeys = [
+    'client_name', 'client_branch_name', 'client_branch_code', 'section_name',
+    'sales_rep_name', 'incharge1_name', 'incharge1_phone', 'incharge2_name',
+    'incharge2_phone',
+];
+$hasAdditionalSearch = false;
+foreach ($additionalSearchKeys as $searchKey) {
+    if (!empty($search[$searchKey])) {
+        $hasAdditionalSearch = true;
+        break;
+    }
+}
+$this->Form->setTemplates(['inputContainer' => '{{content}}']);
 ?>
 <div class="panel panel-primary">
     <div class="panel-heading">
@@ -13,48 +26,10 @@ $search = $searchData ?? [];
     </div>
     <?= $this->Form->create(null, ['url' => ['action' => 'index'], 'type' => 'post']) ?>
     <table class="table customer-search">
-    <colgroup><col style="width:10%"><col style="width:20%"><col style="width:10%"><col style="width:25%"><col style="width:10%"><col style="width:25%"></colgroup>
+    <colgroup><col style="width:10%"><col style="width:25%"><col style="width:10%"><col style="width:25%"><col style="width:10%"><col style="width:25%"></colgroup>
     <tbody>
     <tr>
-        <td class="search-label">TEL</td>
-        <td>
-            <?= $this->Form->control('Search.tel_only', [
-                'label' => false, 'type' => 'text',
-                'value' => $search['tel_only'] ?? '',
-                'class' => 'form-control'
-            ]) ?>
-        </td>
-
-        <td class="search-label">得意先名</td>
-        <td>
-            <?= $this->Form->control('Search.client_name', [
-                'label' => false, 'type' => 'text',
-                'value' => $search['client_name'] ?? '',
-                'class' => 'form-control'
-            ]) ?>
-        </td>
-
-        <td class="search-label">得意先支店名</td>
-        <td>
-            <?= $this->Form->control('Search.client_branch_name', [
-                'label' => false, 'type' => 'text',
-                'value' => $search['client_branch_name'] ?? '',
-                'class' => 'form-control'
-            ]) ?>
-        </td>
-    </tr>
-
-    <tr>
-        <td class="search-label">住所1</td>
-        <td>
-            <?= $this->Form->control('Search.addr1', [
-                'label' => false, 'type' => 'text',
-                'value' => $search['addr1'] ?? '',
-                'class' => 'form-control'
-            ]) ?>
-        </td>
-
-        <td class="search-label">得意先CD</td>
+        <td class="search-label">キー＊</td>
         <td>
             <?= $this->Form->control('Search.client_code', [
                 'label' => false, 'type' => 'text',
@@ -62,47 +37,46 @@ $search = $searchData ?? [];
                 'class' => 'form-control'
             ]) ?>
         </td>
-
-        <td class="search-label">得意先支店CD</td>
-        <td>
-            <?= $this->Form->control('Search.client_branch_code', [
-                'label' => false, 'type' => 'text',
-                'value' => $search['client_branch_code'] ?? '',
-                'class' => 'form-control'
-            ]) ?>
-        </td>
+        <td class="search-label">得意先名（帳合先名）</td>
+        <td><?= $this->Form->control('Search.book_name', ['label' => false, 'value' => $search['book_name'] ?? '', 'class' => 'form-control']) ?></td>
+        <td class="search-label">拠点</td>
+        <td><?= $this->Form->control('Search.base_name', ['label' => false, 'value' => $search['base_name'] ?? '', 'class' => 'form-control']) ?></td>
     </tr>
-
     <tr>
-        <td class="search-label">所属名</td>
-        <td><?= $this->Form->control('Search.section_name', ['label' => false, 'type' => 'text', 'value' => $search['section_name'] ?? '', 'class' => 'form-control']) ?></td>
+        <td class="search-label">得意先CD</td>
+        <td><?= $this->Form->control('Search.reserve1', ['label' => false, 'value' => $search['reserve1'] ?? '', 'class' => 'form-control']) ?></td>
+        <td class="search-label">帳合先・納品先CD</td>
+        <td><?= $this->Form->control('Search.reserve2', ['label' => false, 'value' => $search['reserve2'] ?? '', 'class' => 'form-control']) ?></td>
+        <td class="search-label">営業員CD</td>
+        <td><?= $this->Form->control('Search.sales_staff_cd', ['label' => false, 'value' => $search['sales_staff_cd'] ?? '', 'class' => 'form-control']) ?></td>
+    </tr>
+    <tr>
+        <td class="search-label">住所1</td>
+        <td><?= $this->Form->control('Search.addr1', ['label' => false, 'value' => $search['addr1'] ?? '', 'class' => 'form-control']) ?></td>
+        <td class="search-label">住所2</td>
+        <td><?= $this->Form->control('Search.addr2_search', ['label' => false, 'value' => $search['addr2_search'] ?? '', 'class' => 'form-control']) ?></td>
         <td class="search-label">営業担当者名</td>
-        <td><?= $this->Form->control('Search.sales_person', ['label' => false, 'type' => 'text', 'value' => $search['sales_person'] ?? '', 'class' => 'form-control']) ?></td>
-        <td></td><td></td>
+        <td><?= $this->Form->control('Search.sales_person', ['label' => false, 'value' => $search['sales_person'] ?? '', 'class' => 'form-control']) ?></td>
     </tr>
     <tr>
-        <td class="search-label">顧客の担当者1</td>
-        <td><?= $this->Form->control('Search.incharge1_name', ['label' => false, 'type' => 'text', 'value' => $search['incharge1_name'] ?? '', 'class' => 'form-control']) ?></td>
-        <td class="search-label">顧客の担当者1電話</td>
-        <td><?= $this->Form->control('Search.incharge1_phone', ['label' => false, 'type' => 'text', 'value' => $search['incharge1_phone'] ?? '', 'class' => 'form-control']) ?></td>
-        <td></td><td></td>
+        <td class="search-label">TEL</td>
+        <td><?= $this->Form->control('Search.tel_only', ['label' => false, 'value' => $search['tel_only'] ?? '', 'class' => 'form-control']) ?></td>
+        <td class="search-label">サブ電話番号1</td>
+        <td><?= $this->Form->control('Search.sub_phone1', ['label' => false, 'value' => $search['sub_phone1'] ?? '', 'class' => 'form-control']) ?></td>
+        <td class="search-label">サブ電話番号2</td>
+        <td><?= $this->Form->control('Search.sub_phone2', ['label' => false, 'value' => $search['sub_phone2'] ?? '', 'class' => 'form-control']) ?></td>
     </tr>
     <tr>
-        <td class="search-label">顧客の担当者2</td>
-        <td><?= $this->Form->control('Search.incharge2_name', ['label' => false, 'type' => 'text', 'value' => $search['incharge2_name'] ?? '', 'class' => 'form-control']) ?></td>
-        <td class="search-label">顧客の担当者2電話</td>
-        <td><?= $this->Form->control('Search.incharge2_phone', ['label' => false, 'type' => 'text', 'value' => $search['incharge2_phone'] ?? '', 'class' => 'form-control']) ?></td>
-        <td></td><td></td>
+        <?php for ($phoneNumber = 3; $phoneNumber <= 5; $phoneNumber++): ?>
+            <td class="search-label">サブ電話番号<?= $phoneNumber ?></td>
+            <td><?= $this->Form->control('Search.sub_phone' . $phoneNumber, ['label' => false, 'value' => $search['sub_phone' . $phoneNumber] ?? '', 'class' => 'form-control']) ?></td>
+        <?php endfor; ?>
     </tr>
     <tr>
         <td class="search-label">登録日（From）</td>
-        <td>
-            <?= $this->Form->control('Search.created_from', ['label' => false, 'type' => 'text', 'value' => $search['created_from'] ?? '', 'class' => 'form-control datepicker']) ?>
-        </td>
+        <td><?= $this->Form->control('Search.created_from', ['label' => false, 'type' => 'text', 'size' => 10, 'value' => $search['created_from'] ?? '', 'class' => 'form-control datepicker']) ?></td>
         <td class="search-label">登録日（To）</td>
-        <td>
-            <?= $this->Form->control('Search.created_to', ['label' => false, 'type' => 'text', 'value' => $search['created_to'] ?? '', 'class' => 'form-control datepicker']) ?>
-        </td>
+        <td><?= $this->Form->control('Search.created_to', ['label' => false, 'type' => 'text', 'size' => 10, 'value' => $search['created_to'] ?? '', 'class' => 'form-control datepicker']) ?></td>
         <td></td><td></td>
     </tr>
 </tbody>
@@ -117,6 +91,37 @@ $search = $searchData ?? [];
             <?= $this->Form->button('検索結果を出力', ['name' => 'download', 'value' => '1', 'type' => 'submit', 'class' => 'btn-success btn-xs', 'style' => 'width:150px;height:30px;cursor:pointer']) ?>
         <?php endif; ?>
     </div>
+    <details class="additional-search" <?= $hasAdditionalSearch ? 'open' : '' ?>>
+        <summary>追加検索条件</summary>
+        <table class="table">
+            <tbody>
+                <tr>
+                    <td class="search-label">得意先名</td>
+                    <td><?= $this->Form->control('Search.client_name', ['label' => false, 'value' => $search['client_name'] ?? '', 'class' => 'form-control']) ?></td>
+                    <td class="search-label">得意先支店名</td>
+                    <td><?= $this->Form->control('Search.client_branch_name', ['label' => false, 'value' => $search['client_branch_name'] ?? '', 'class' => 'form-control']) ?></td>
+                    <td class="search-label">得意先支店CD</td>
+                    <td><?= $this->Form->control('Search.client_branch_code', ['label' => false, 'value' => $search['client_branch_code'] ?? '', 'class' => 'form-control']) ?></td>
+                </tr>
+                <tr>
+                    <td class="search-label">所属名</td>
+                    <td><?= $this->Form->control('Search.section_name', ['label' => false, 'value' => $search['section_name'] ?? '', 'class' => 'form-control']) ?></td>
+                    <td class="search-label">営業担当者名（旧項目）</td>
+                    <td><?= $this->Form->control('Search.sales_rep_name', ['label' => false, 'value' => $search['sales_rep_name'] ?? '', 'class' => 'form-control']) ?></td>
+                    <td class="search-label">顧客の担当者1</td>
+                    <td><?= $this->Form->control('Search.incharge1_name', ['label' => false, 'value' => $search['incharge1_name'] ?? '', 'class' => 'form-control']) ?></td>
+                </tr>
+                <tr>
+                    <td class="search-label">顧客の担当者1電話</td>
+                    <td><?= $this->Form->control('Search.incharge1_phone', ['label' => false, 'value' => $search['incharge1_phone'] ?? '', 'class' => 'form-control']) ?></td>
+                    <td class="search-label">顧客の担当者2</td>
+                    <td><?= $this->Form->control('Search.incharge2_name', ['label' => false, 'value' => $search['incharge2_name'] ?? '', 'class' => 'form-control']) ?></td>
+                    <td class="search-label">顧客の担当者2電話</td>
+                    <td><?= $this->Form->control('Search.incharge2_phone', ['label' => false, 'value' => $search['incharge2_phone'] ?? '', 'class' => 'form-control']) ?></td>
+                </tr>
+            </tbody>
+        </table>
+    </details>
     <?= $this->Form->end() ?>
 </div>
 
@@ -131,40 +136,51 @@ $search = $searchData ?? [];
         <table id="dt" class="table table-striped table-hover" style="font-size:12px">
             <thead>
                 <tr height="35" bgcolor="#20b2aa" style="vertical-align:middle;color:#ffffff;">
-                    <td width="4%">得意先CD</td>
-                    <td width="6%">得意先支店CD</td>
-                    <td width="6%">得意先名</td>
-                    <td width="6%">得意先支店名</td>
+                    <td width="4%">キー</td>
+                    <td width="6%">複数口座CD</td>
+                    <td width="6%">得意先名（帳合先名）</td>
+                    <td width="6%">拠点</td>
                     <td width="5%">TEL</td>
                     <td width="7%">サブ電話番号1</td>
                     <td width="8%">住所1</td>
-                    <td width="6%">顧客の担当者1</td>
-                    <td width="6%">顧客の担当者1電話</td>
-                    <td width="6%">顧客の担当者2</td>
-                    <td width="6%">顧客の担当者2電話</td>
-                    <td width="5%">所属名</td>
-                    <td width="5%">営業担当者名</td>
-                    <td width="5%">備考１</td>
+                    <td width="6%">営業員CD</td>
+                    <td width="6%">営業担当者名</td>
+                    <td width="6%">サブ電話番号2</td>
+                    <td width="5%">締日</td>
+                    <td width="5%">回収区分</td>
+                    <td width="5%">ベッツダイレクト区分</td>
+                    <td width="5%">備考1（受注時摘要）</td>
                     <td width="5%">登録日</td>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($customers as $customer): ?>
                     <tr onDblClick="location.href='<?= $this->Url->build(['controller' => 'Contacts', 'action' => 'add', $customer->id]) ?>'">
+                        <?php
+                        $customerTitle = $customer->book_name
+                            ?: $customer->client_name
+                            ?: $customer->company_name
+                            ?: $customer->name
+                            ?: $customer->client_code
+                            ?: '顧客 #' . $customer->id;
+                        ?>
                         <td><?= h($customer->client_code ?? $customer->client_cd) ?></td>
                         <td><?= h($customer->client_branch_code) ?></td>
-                        <td><?= h($customer->client_name ?? $customer->company_name ?? $customer->name) ?></td>
-                        <td><?= h($customer->client_branch_name ?? $customer->company_branch_name) ?></td>
-                        <td><?= h($customer->tel) ?></td>
-                        <td><?= h($customer->tel2) ?></td>
+                        <td><?= h((string)$customerTitle) ?></td>
+                        <td><?= h($customer->base_name ?: $customer->section_name) ?></td>
+                        <td><?= $customer->tel ? $this->Form->postLink(
+                            (string)$customer->tel,
+                            ['_name' => 'customerDial', 'phone' => rawurlencode((string)$customer->tel)]
+                        ) : '' ?></td>
+                        <td><?= h($customer->sub_phone1 ?: $customer->tel2) ?></td>
                         <td><a style="color:blue" target="_blank" rel="noopener noreferrer" href="https://www.google.co.jp/maps?q=<?= rawurlencode((string)$customer->addr1) ?>"><?= h($customer->addr1) ?></a></td>
-                        <td><?= h($customer->incharge1_name) ?></td>
-                        <td><?= h($customer->incharge1_phone) ?></td>
-                        <td><?= h($customer->incharge2_name) ?></td>
-                        <td><?= h($customer->incharge2_phone) ?></td>
-                        <td><?= h($customer->section_name) ?></td>
-                        <td><?= h($customer->sales_person) ?></td>
-                        <td><?= h(mb_substr((string)$customer->notes1, 0, 11) . (mb_strlen((string)$customer->notes1) > 11 ? '...' : '')) ?></td>
+                        <td><?= h($customer->sales_staff_cd) ?></td>
+                        <td><?= h($customer->sales_rep_name ?: $customer->sales_person) ?></td>
+                        <td><?= h($customer->sub_phone2 ?: $customer->tel3) ?></td>
+                        <td><?= h($customer->closing_date ?: $customer->deadline) ?></td>
+                        <td><?= h($customer->collection_cls) ?></td>
+                        <td><?= h($customer->direct_cls) ?></td>
+                        <td><?= h(mb_substr((string)($customer->remarks1 ?: $customer->notes1), 0, 11) . (mb_strlen((string)($customer->remarks1 ?: $customer->notes1)) > 11 ? '...' : '')) ?></td>
                         <td><?= $customer->created ? h($customer->created->format('Y-m-d')) : '' ?></td>
 
                     </tr>
@@ -190,6 +206,14 @@ $search = $searchData ?? [];
         vertical-align: middle;
         color: #ffffff;
         background-color: #149c82;
+    }
+    .additional-search {
+        width: 95%;
+        margin: 0 auto 8px;
+    }
+    .additional-search summary {
+        color: #149c82;
+        cursor: pointer;
     }
 </style>
 

@@ -1,6 +1,6 @@
 # JSFIT: existing CakePHP 2 production database to CakePHP 5
 
-Status: deployment plan; the production upgrade migration is NOT prepared or approved for execution yet. The production table definitions and indexes have not been inspected. No production database changes have been made.
+The scoped migration source is ready. It covers the caller ID setting and password column width. Full production compatibility still needs rehearsal on a database clone. No production database changes have been made from this workspace.
 
 ## Runtime and release
 
@@ -41,6 +41,8 @@ Do not import schema-dump-default.lock or a development database over production
 
 ## Information needed to prepare the exact migration
 
+The production `customers` listing shows `client_code VARCHAR(100) NOT NULL UNIQUE` and nullable `client_branch_code`. Preserve the existing uniqueness on `client_code`. Imports update the same customer when its branch changes. The listing has no `client_cd` column.
+
 Collect server PHP versions for CLI and web, database version, table definitions, indexes, storage engines, collations and migration history. Share schema only, not customer records, passwords or connection credentials.
 
 Example schema-only export from the database server (replace placeholders):
@@ -69,9 +71,18 @@ SHOW CREATE TABLE callbacks;
 
 Inspect mt_outline/mt_overview and phinxlog if they exist. Do not assume that either table is present. Check duplicate customer codes, telephone numbers, and whether contacts.queue_name stores queue IDs or names on the cloned database before deciding index or value conversions.
 
-## Migration to prepare after schema comparison
+## Production migration source
 
-Use a dedicated directory such as config/ProductionUpgrade/ containing only the reviewed legacy upgrade migration(s). This directory/migration does not exist yet. The migration should:
+`config/ProductionUpgrade/` contains two migrations.
+
+- `20261119120000` adds `core_settings.customer_contact_dial_caller_id` when the column is missing. Existing settings receive `05033106255` as the default. A caller ID already saved in the column is preserved.
+- `20261119130000` widens `users.password` to `VARCHAR(255)` when needed and retains the existing values. A wider `VARCHAR` is preserved.
+
+Both versions use the same migration log as the main migration source. The two files under `config/Migrations/` load the same implementations for fresh installations. Recover from migration problems using the verified backup. Both production migrations refuse automatic rollback because reversing them could discard saved settings or truncate password hashes.
+
+## Remaining compatibility checks
+
+The two focused migrations address the approved schema changes. Use the staging rehearsal to resolve the remaining compatibility gaps.
 
 - Validate required legacy tables/columns before making changes; fail clearly for an unexpected schema.
 - Add required missing columns without dropping existing customer/contact data or changing primary IDs.
@@ -93,13 +104,13 @@ All future deployments must explicitly use the dedicated migration source until 
 
 1. Take a full recoverable database backup, application/config/upload backup, and verify a restore. For InnoDB a consistent logical backup may use --single-transaction; mixed/MyISAM engines require a backup/locking plan that covers all tables. Retain backups outside public web directories.
 2. Restore the production database to an isolated staging database. Point only the new release to that clone. Prevent staging from dialing real customers or calling write-capable production integrations.
-3. Prepare the dedicated upgrade migration from the schema comparison. Apply it to the clone, inspect row counts, existing customer/contact values, codes, indexes, status flags, limits and password-column capacity. Rehearse a repeat run.
+3. Apply the `ProductionUpgrade` source to the clone. Inspect row counts, saved caller IDs and the existing password values. Verify customer/contact fields, codes, indexes, status flags and call-history limits. Rehearse a repeat run.
 4. Verify manual login for legacy plain-text users and new hashed users, SSO, logout, incoming lookup for every supported phone column, blank/unknown callers, multiple matches, customer/contact CRUD, invalid-update retry, Delete/New/Back buttons, CSV headers/data, spreadsheet import/reimport, phone/store popups and recording playback. Test Ameyo against an agreed test session.
 5. During cutover stop writes from the old UI, imports, scheduled jobs and incoming integrations; take the final consistent backup, then apply the rehearsed migration to the intended production database with the new PHP runtime.
 6. Clear schema cache, switch the virtual host/routing and Ameyo integration URLs as required, then smoke-test before reopening normal traffic. A new PHP runtime/session handler can require users to log in again.
 7. Monitor application/web/PHP logs and failed imports/API responses. Retain the old release and tested recovery procedure.
 
-The following are templates for AFTER the dedicated migration exists and has passed rehearsal. Do not substitute the historical Migrations directory:
+Run these commands from the project root after the staging rehearsal.
 
 ```sh
 php bin/cake.php migrations status --source ProductionUpgrade

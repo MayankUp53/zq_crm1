@@ -12,6 +12,21 @@ use Cake\View\Helper;
  */
 class CsvHelper extends Helper
 {
+    /** Emit the unquoted legacy headers and quoted SJIS-win data rows. */
+    public function renderLegacyRows(array $columns, iterable $results): void
+    {
+        echo mb_convert_encoding(implode(',', $columns), 'SJIS-win', 'UTF-8') . "\n";
+        $fields = array_keys($columns);
+        foreach ($results as $record) {
+            $row = [];
+            foreach ($fields as $field) {
+                $value = str_replace('"', '""', (string)($record[$field] ?? ''));
+                $row[] = $this->addField($value);
+            }
+            echo implode(',', $row) . "\n";
+        }
+    }
+
     /**
      * Default configuration.
      *

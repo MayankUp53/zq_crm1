@@ -1,17 +1,18 @@
 <?php
 $this->assign('title', '対応履歴登録');
 $customerRows = [
-    ['得意先CD', 'client_code', '得意先支店CD', 'client_branch_code'],
-    ['得意先名', 'client_name', '得意先支店名', 'client_branch_name'],
-    ['TEL', 'tel', 'FAX', 'fax'],
-    ['顧客の担当者1電話', 'incharge1_phone', '顧客の担当者2電話）', 'incharge2_phone'],
-    ['顧客の担当者3電話', 'incharge3_phone', '顧客の担当者4電話）', 'incharge4_phone'],
-    ['住所１', 'addr1', '住所２', 'addr2'],
-    ['所属名', 'section_name', '営業担当者名', 'sales_person'],
-    ['締日', 'deadline', '備考１', 'notes1'],
-    ['備考2', 'notes2', '備考3', 'notes3'],
-    ['備考4', 'notes4', '', null],
+    ['キー＊', 'client_code', '拠点', 'base_name'],
+    ['得意先名(帳合先名)', 'book_name', '複数口座CD', 'client_branch_code'],
+    ['得意先CD', 'reserve1', '帳合先・納品先CD', 'reserve2'],
+    ['住所1', 'addr1', '住所2', 'addr2'],
+    ['FAX', 'fax', 'TEL＊', 'tel'],
+    ['営業員CD', 'sales_staff_cd', 'サブ電話番号1', 'sub_phone1'],
+    ['営業担当者名', 'sales_rep_name', 'サブ電話番号2', 'sub_phone2'],
+    ['締日', 'closing_date', 'サブ電話番号3', 'sub_phone3'],
+    ['回収区分', 'collection_cls', 'サブ電話番号4', 'sub_phone4'],
+    ['ベッツダイレクト区分', 'direct_cls', 'サブ電話番号5', 'sub_phone5'],
 ];
+$this->Form->setTemplates(['inputContainer' => '{{content}}']);
 ?>
 <div class="contact-add">
     <div class="panel panel-primary">
@@ -23,18 +24,24 @@ $customerRows = [
             </span>
         </div>
         <table class="table customer-details">
-            <colgroup><col style="width:8%"><col style="width:20%"><col style="width:8%"><col></colgroup>
+            <colgroup><col style="width:15%"><col style="width:30%"><col style="width:15%"><col></colgroup>
             <tbody>
                 <?php foreach ($customerRows as [$leftLabel, $leftField, $rightLabel, $rightField]): ?>
                     <tr>
                         <td class="customer-label"><?= h($leftLabel) ?></td>
                         <td><?= h($customer->{$leftField} ?? '') ?></td>
-                        <?php if ($rightField !== null): ?>
-                            <td class="customer-label"><?= h($rightLabel) ?></td>
-                            <td><?= h($customer->{$rightField} ?? '') ?></td>
-                        <?php else: ?>
-                            <td colspan="2"></td>
-                        <?php endif; ?>
+                        <td class="customer-label"><?= h($rightLabel) ?></td>
+                        <td>
+                            <?php if ($rightField === 'tel' && !empty($customer->tel)): ?>
+                                <?= $this->Form->postLink(
+                                    (string)$customer->tel,
+                                    ['_name' => 'contactDial', 'phone' => rawurlencode((string)$customer->tel)],
+                                    ['style' => 'color:blue']
+                                ) ?>
+                            <?php else: ?>
+                                <?= h($customer->{$rightField} ?? '') ?>
+                            <?php endif; ?>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
                 <tr>
@@ -53,7 +60,7 @@ $customerRows = [
         </table>
     </div>
 
-    <?= $this->Form->create($contact, ['url' => ['action' => 'add', $customer->id], 'class' => 'form contact-add-form']) ?>
+    <?= $this->Form->create($contact, ['url' => ['action' => 'add', $customer->id], 'class' => 'form contact-add-form', 'novalidate' => true]) ?>
     <?= $this->Form->control('customer_id', ['type' => 'hidden', 'value' => $customer->id]) ?>
     <div class="panel panel-info">
         <div class="panel-heading">
@@ -64,12 +71,12 @@ $customerRows = [
                 <tr>
                     <td class="add-label">概要</td>
                     <td><?= $this->Form->control('summary', ['label' => false, 'type' => 'text', 'required' => false, 'class' => 'form-control if100']) ?></td>
-                    <td class="add-label">ステータス＊</td>
-                    <td><?= $this->Form->control('status', ['label' => false, 'type' => 'select', 'options' => $statusOpt ?? [], 'empty' => '-----', 'class' => 'form-control if100', 'required' => true]) ?></td>
+                    <td class="add-label">種別＊</td>
+                    <td><?= $this->Form->control('queue_name', ['label' => false, 'type' => 'select', 'required' => true, 'options' => $queueOpt ?? [], 'empty' => '-----', 'class' => 'form-control if100']) ?></td>
                 </tr>
                 <tr>
-                    <td class="add-label">店舗への連絡</td>
-                    <td><?= $this->Form->control('queue_name', ['label' => false, 'type' => 'select', 'required' => false, 'options' => $queueOpt ?? [], 'empty' => '-----', 'class' => 'form-control if100']) ?></td>
+                    <td class="add-label">ステータス</td>
+                    <td><?= $this->Form->control('status', ['label' => false, 'type' => 'select', 'options' => $statusOpt ?? [], 'empty' => '-----', 'class' => 'form-control if100', 'required' => false]) ?></td>
                     <td class="add-label"></td>
                     <td></td>
                 </tr>
@@ -141,9 +148,9 @@ $customerRows = [
         if (!event.submitter || event.submitter.name !== 'add') {
             return;
         }
-        if (!this.querySelector('[name="status"]').value) {
+        if (!this.querySelector('[name="queue_name"]').value) {
             event.preventDefault();
-            alert('ステータスは必須項目です');
+            alert('種別は必須項目です');
             return;
         }
         if (!window.confirm('対応履歴を登録します。よろしいですか？')) {

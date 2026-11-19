@@ -2,8 +2,7 @@
     <div class="panel-heading">
         <h3 class="panel-title">再コール更新</h3>
     </div>
-    <?= $this->Form->create($callback, ['url' => ['action' => 'edit', $callback->id]]) ?>
-    <?= $this->Form->control('id', ['type' => 'hidden']) ?>
+    <?= $this->Form->create($callback, ['url' => $editUrl]) ?>
     <table class="table table-hover">
         <tbody>
             <tr>
@@ -37,9 +36,10 @@
         </tbody>
     </table>
     <div align="center" class="btn_margin">
-        <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="btn-default btn-xs" style="width:150px;height:30px;">キャンセル</a>
+        <a href="<?= $this->Url->build($cancelUrl) ?>" class="btn-default btn-xs" style="width:150px;height:30px;">キャンセル</a>
         <?= $this->Form->button('更　新', ['class' => 'btn-warning btn-xs', 'style' => 'width:150px;height:30px;cursor:pointer']) ?>
-        <?= $this->Form->postLink('削　除', ['action' => 'delete', $callback->id], ['confirm' => '削除しますか？', 'class' => 'btn-danger btn-xs', 'style' => 'width:150px;height:30px;cursor:pointer']) ?>
+        <?= $this->Form->postLink('削　除', $deleteUrl, ['block' => 'callbackDeleteForm', 'confirm' => '削除しますか？', 'class' => 'btn-danger btn-xs', 'style' => 'width:150px;height:30px;cursor:pointer']) ?>
     </div>
     <?= $this->Form->end() ?>
+    <?= $this->fetch('callbackDeleteForm') ?>
 </div>

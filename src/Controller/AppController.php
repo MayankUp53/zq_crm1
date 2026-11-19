@@ -9,6 +9,7 @@ use Cake\Controller\Controller;
 use Cake\Datasource\EntityInterface;
 use Cake\Datasource\FactoryLocator;
 use Cake\Event\EventInterface;
+use Cake\Http\Exception\ForbiddenException;
 use Cake\ORM\Query\SelectQuery;
 use Psr\Http\Message\ResponseInterface;
 
@@ -50,6 +51,21 @@ class AppController extends Controller
     {
         $identity = $this->Authentication->getIdentity();
         return $identity ? $identity->getOriginalData() : null;
+    }
+
+    protected function autoSubmitLegacyAction(array $actionUrl, string $submitLabel): void
+    {
+        $request = $this->getRequest();
+        if (!in_array($request->getHeaderLine('Sec-Fetch-Site'), ['same-origin', 'none'], true)
+            || $request->getHeaderLine('Sec-Fetch-Mode') !== 'navigate'
+            || $request->getHeaderLine('Sec-Fetch-Dest') !== 'document'
+            || $request->getHeaderLine('Sec-Fetch-User') !== '?1'
+        ) {
+            throw new ForbiddenException();
+        }
+
+        $this->set(compact('actionUrl', 'submitLabel'));
+        $this->viewBuilder()->disableAutoLayout()->setTemplatePath('element')->setTemplate('legacy_action_post');
     }
 
     /**

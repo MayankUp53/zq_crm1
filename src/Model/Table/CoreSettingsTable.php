@@ -32,6 +32,23 @@ class CoreSettingsTable extends Table
 
     public function validationDefault(Validator $validator): Validator
     {
+        $validator->scalar('customer_contact_dial_caller_id')
+            ->maxLength('customer_contact_dial_caller_id', 50)
+            ->allowEmptyString('customer_contact_dial_caller_id');
+
         return $validator;
+    }
+
+    public function getCallHistoryLimitField(): string
+    {
+        $schema = $this->getConnection()
+            ->getSchemaCollection()
+            ->describe($this->getTable());
+
+        if ($schema->hasColumn('limit_value')) {
+            return 'limit_value';
+        }
+
+        return 'limit';
     }
 }

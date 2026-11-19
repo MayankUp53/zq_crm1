@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use Cake\Http\Exception\BadRequestException;
+
 /**
  * Callbacks Controller
  *
@@ -61,28 +63,58 @@ class CallbacksController extends AppController
 
     public function edit(?string $id = null)
     {
-        $callback = $this->Callbacks->get($id, ['conditions' => ['deleted IS' => null]]);
-        if ($this->request->is(['patch', 'post', 'put'])) {
-            $data = $this->request->getData();
+        $legacy = $this->request->getParam('legacyCallback') === true;
+        $isWrite = $this->request->is(['patch', 'post', 'put']);
+        $data = $isWrite ? $this->request->getData() : [];
+        if ($legacy && $isWrite) {
+            $data = $this->request->getData('data.Contact') ?? $this->request->getData('Contact') ?? $data;
+        }
+        if (!is_array($data)) {
+            throw new BadRequestException();
+        }
+        if ($legacy && $isWrite) {
+            $postedId = $data['id'] ?? null;
+            if ($id === null && (is_string($postedId) || is_int($postedId)) && ctype_digit((string)$postedId)) {
+                $id = (string)$postedId;
+            }
+            if (array_key_exists('memo', $data)) {
+                $data['remark'] = $data['memo'];
+            }
+        }
+
+        $callback = $this->Callbacks->find()->where(['id' => $id, 'deleted IS' => null])->firstOrFail();
+        if ($isWrite) {
+            $data = array_intersect_key($data, array_fill_keys(['customer_id', 'phone', 'callback_datetime', 'is_done', 'remark'], true));
             $data['updated'] = date('Y-m-d H:i:s');
             $data['updated_user_id'] = $this->getCurrentUser()?->id ?? 0;
 
             $callback = $this->Callbacks->patchEntity($callback, $data);
             if ($this->Callbacks->save($callback)) {
                 $this->Flash->success(__('再コール予約の更新が完了しました。'));
-                return $this->redirect(['action' => 'index']);
+                return $this->redirect($this->callbackReturnUrl());
             }
             $this->Flash->error(__('再コール予約の更新に失敗しました。もう一度操作してください。'));
         }
 
-        $this->set(compact('callback'));
+        $editUrl = $legacy ? ['_name' => 'legacyCallbackEdit', 'id' => $callback->id] : ['action' => 'edit', $callback->id];
+        $deleteUrl = $legacy ? ['_name' => 'legacyCallbackDelete', 'id' => $callback->id] : ['action' => 'delete', $callback->id];
+        $cancelUrl = $this->callbackReturnUrl();
+        $this->set(compact('callback', 'editUrl', 'deleteUrl', 'cancelUrl'));
         $this->setListValue();
     }
 
     public function delete(?string $id = null)
     {
+        if ($this->request->getParam('legacyCallback') === true && $this->request->is('get')) {
+            $this->autoSubmitLegacyAction(['_name' => 'legacyCallbackDelete', 'id' => $id], __('削除'));
+            return;
+        }
+
         $this->request->allowMethod(['post', 'delete']);
         $callback = $this->Callbacks->get($id);
+        if ($callback->deleted !== null) {
+            return $this->redirect($this->callbackReturnUrl());
+        }
 
         $callback->deleted = date('Y-m-d H:i:s');
         $callback->deleted_user_id = $this->getCurrentUser()?->id ?? 0;
@@ -93,7 +125,14 @@ class CallbacksController extends AppController
             $this->Flash->error(__('再コール予約の削除に失敗しました。もう一度操作してください。'));
         }
 
-        return $this->redirect(['action' => 'index']);
+        return $this->redirect($this->callbackReturnUrl());
+    }
+
+    private function callbackReturnUrl(): array
+    {
+        return $this->request->getParam('legacyCallback') === true
+            ? ['controller' => 'Homes', 'action' => 'index']
+            : ['action' => 'index'];
     }
 
     protected function setListValue(): void
@@ -104,7 +143,11 @@ class CallbacksController extends AppController
             ->where(['deleted IS' => null])
             ->orderBy(['id' => 'ASC'])
             ->toArray();
-        $customers = $this->Customers->find('list', keyField: 'id', valueField: 'name_kj')
+        $fields = array_values(array_intersect(['id', 'book_name', 'name_kj', 'name'], $this->Customers->getSchema()->columns()));
+        $customers = $this->Customers->find('list', keyField: 'id', valueField: static function ($customer): string {
+            return $customer->book_name ?: ($customer->name_kj ?: ($customer->name ?: (string)$customer->id));
+        })
+            ->select($fields)
             ->where(['deleted IS' => null])
             ->orderBy(['id' => 'ASC'])
             ->toArray();

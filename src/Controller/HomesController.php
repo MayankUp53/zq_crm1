@@ -18,7 +18,8 @@ use function Cake\Error\debug;
  */
 class HomesController extends AppController
 {
-    protected $Callbacks;
+    private const CALL_HISTORY_CAMPAIGN_ID = '29';
+
     protected $CoreSettings;
     protected $MtCids;
     protected $MtPhonelists;
@@ -29,10 +30,7 @@ class HomesController extends AppController
     {
         parent::initialize();
 
-        $this->loadComponent('App.CallbackNotification');
-
         // Tables referenced across actions.
-        $this->Callbacks = $this->fetchTable('Callbacks');
         $this->CoreSettings = $this->fetchTable('CoreSettings');
         $this->MtCids = $this->fetchTable('MtCids');
         $this->MtPhonelists = $this->fetchTable('MtPhonelists');
@@ -51,65 +49,23 @@ class HomesController extends AppController
 
     public function index()
     {
-        // Upcoming callbacks
-        $callbacks = $this->Callbacks
-            ->find()
-            ->where(['deleted IS' => null])
-            ->orderBy(['callback_datetime' => 'DESC'])
-            ->all();
+        $dialPhone = (string)$this->request->getQuery('tel', $this->request->getParam('phone', ''));
 
         $core = $this->CoreSettings->find()
             ->where(['deleted IS' => null])
             ->first();
 
-        $voicelogUrl = $core?->voicelog_url;
-        $ccid = $core?->ccid;
-        $limit = (int)($core?->limit_value ?? 50);
-        $callbackNoticeTime = (int)($core?->callback_notice_time ?? 0);
-
-        $session = $this->request->getSession();
-        $userId = $this->Authentication->getIdentity()?->getIdentifier();
-        $campaignId = $session->read('campaign');
-
-        $dateFrom = date('Y-m-d', strtotime('-1 month'));
-        $dateTo = date('Y-m-d');
-
+        $limitField = $this->CoreSettings->getCallHistoryLimitField();
+        $limit = (int)($core?->{$limitField} ?? 50);
         $response = $this->callCallHistoryApi(
-            (string)$ccid,
-            (string)$campaignId,
+            $core?->ch_api_url,
+            (string)$core?->ccid,
             $limit,
-            (string)$userId,
-            $dateFrom,
-            $dateTo
+            date('Y-m-d', strtotime('-1 month')),
+            date('Y-m-d')
         );
 
-        // // Paginate call history (array from API)
-        // $page = (int)$this->request->getQuery('page', 1);
-        // $perPage = (int)($core?->limit ?? 50);
-        // $response = is_array($response) ? $response : [];
-        // $total = count($response);
-        // $offset = max(0, ($page - 1) * $perPage);
-        // $pagedCalls = array_slice($response, $offset, $perPage);
-        // $pageCount = (int)ceil($total / $perPage);
-
-        $warning = $this->CallbackNotification->getNumOfWarning();
-        $callbackNoticeTimeString = '+' . $callbackNoticeTime . ' minute';
-
-        $this->set(compact(
-            'callbacks',
-            'response',
-          //  'pagedCalls',
-         //   'page',
-          //  'pageCount',
-          //  'total',
-            'voicelogUrl',
-            'callbackNoticeTimeString',
-            'userId',
-            'warning',
-            'limit',
-            'campaignId'
-        ));
-
+        $this->set(compact('response', 'limit', 'dialPhone'));
         $this->setListValue();
     }
 
@@ -138,8 +94,6 @@ class HomesController extends AppController
 
         $this->set(compact('mtPhonelists'));
         $this->viewBuilder()->disableAutoLayout();
-        
-     //   $this->setListValue();
     }
 
     public function storeList()
@@ -147,62 +101,78 @@ class HomesController extends AppController
         $mtPhonelists = $this->MtPhonelists
             ->find()
             ->select(['item_name'])
-            ->where([
-                'deleted IS' => null,
-            ])
+            ->where(['deleted IS' => null])
             ->orderBy(['disp_cd' => 'ASC'])
             ->all();
 
-
         $this->set(compact('mtPhonelists'));
         $this->viewBuilder()->disableAutoLayout();
-        $this->setListValue();
     }
-public function manualDialApi()
+
+    public function manualDialApi()
     {
+        $dialFrom = $this->request->getParam('dialFrom');
+        $encodedPhone = $this->request->getParam('phone');
+        $phone = $encodedPhone === null ? null : rawurldecode($encodedPhone);
+        $returnTo = ['controller' => $dialFrom ?? 'Homes', 'action' => 'index'];
+        if ($dialFrom !== null && $phone !== null && $this->request->is('get')) {
+            $dialUrl = ['_name' => $dialFrom === 'Customers' ? 'customerDial' : 'contactDial', 'phone' => rawurlencode($phone)];
+            $this->autoSubmitLegacyAction($dialUrl, __('発信'));
+            return;
+        }
+
         if (!$this->request->is('post')) {
-            return $this->redirect(['action' => 'index']);
+            return $this->redirect($returnTo);
         }
 
         $session = $this->request->getSession();
-        $core = $this->CoreSettings->find()
-            ->where(['deleted IS' => null])
-            ->first();
-
-        $cmdreqId = 0;
+        $campaignId = $session->read('campaign');
         $sessionId = $session->read('sessionId');
-        $callerId = $this->request->getData('cid');
-        $tel = (string)$this->request->getData('tel');
-
-        if (empty($sessionId) || empty($callerId) || empty($tel)) {
-            $this->Flash->error(__('必須の情報が不足しています。再度操作してください。'));
-            return $this->redirect(['action' => 'index']);
+        if (empty($campaignId) || empty($sessionId)) {
+            $this->Flash->error(__('AmeyoJのセッションが正常に取得できませんでした。操作をやり直してください。'));
+            return $this->redirect($returnTo);
         }
 
-        $caller = $this->MtCids->find()
-            ->select(['campaign_id'])
-            ->where(['cid' => $callerId, 'deleted IS' => null])
+        $tel = $phone ?? $this->request->getData('tel');
+        if (!is_string($tel) || trim($tel) === '') {
+            $this->Flash->error(__('発信先TELが未入力です。'));
+            return $this->redirect($returnTo);
+        }
+
+        $core = $this->CoreSettings->find()
+            ->where(['deleted IS' => null])
+            ->orderBy(['id' => 'ASC'])
             ->first();
-        $campaignId = $caller?->campaign_id;
-        if (empty($campaignId)) {
-            $this->Flash->error(__('AmeyoJのセッションが正常に取得できませんでした。操作をやり直してください。'));
-            return $this->redirect(['action' => 'index']);
+        $callerId = trim((string)$core?->customer_contact_dial_caller_id);
+
+        if ($dialFrom === null) {
+            $callerId = $this->request->getData('cid');
+            if (!is_string($callerId) || $callerId === '' || !$this->MtCids->exists([
+                'cid' => $callerId,
+                'campaign_id' => $campaignId,
+                'deleted IS' => null,
+            ])) {
+                $this->Flash->error(__('このキャンペーンの通知番号を選択してください。'));
+                return $this->redirect($returnTo);
+            }
+        } elseif ($callerId === '') {
+            $this->Flash->error(__('顧客・対応履歴から発信するための通知番号が設定されていません。'));
+            return $this->redirect($returnTo);
         }
 
         $url = $core?->dial_api_url;
         if (!$url) {
             $this->Flash->error(__('ダイヤルAPIのURLが設定されていません。'));
-            return $this->redirect(['action' => 'index']);
+            return $this->redirect($returnTo);
         }
 
         $payload = [
             'campaignId' => (string)$campaignId,
             'sessionId' => (string)$sessionId,
-            'command-request-id' => (string)$cmdreqId,
-            'phone' => (string)$tel,
-            'shouldAddCustomer' => false,
+            'command-request-id' => '0',
+            'phone' => $tel,
             'additionalParams' => [
-                'caller_id' => (string)$callerId,
+                'caller_id' => $callerId,
             ],
         ];
 
@@ -210,20 +180,21 @@ public function manualDialApi()
         try {
             // The legacy API expected JSON as a URL-encoded data param appended to the URL.
             $response = $client->get(
-                $url . urlencode(json_encode($payload, JSON_UNESCAPED_SLASHES)),
+                $url . urlencode(json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)),
                 [],
                 ['headers' => ['Content-Type' => 'application/json']]
             );
 
             $body = json_decode((string)$response->getBody(), true);
         } catch (\Throwable $e) {
-            Log::error('手動発信APIの呼び出しに失敗しました: ' . $e->getMessage());
+            Log::error('手動発信APIの呼び出しに失敗しました。', ['exceptionClass' => $e::class]);
             $this->Flash->error(__('外部APIの呼び出しに失敗しました。'));
-            return $this->redirect(['action' => 'index']);
+            return $this->redirect($returnTo);
         }
 
         if (!is_array($body) || ($body['reason'] ?? '') !== 'success') {
-            $message = $body['reason'] ?? __('不明なエラーが発生しました。');
+            $reason = $body['reason'] ?? null;
+            $message = is_string($reason) ? $reason : __('不明なエラーが発生しました。');
             if (strpos($message, '業務を行っていません') !== false) {
                 $message = 'ステータスを利用可能に変更してください。';
             } elseif (strpos($message, '他のコールのために予約されています') !== false) {
@@ -232,39 +203,33 @@ public function manualDialApi()
             $this->Flash->error($message);
         }
 
-        return $this->redirect(['action' => 'index']);
+        return $this->redirect($returnTo);
     }
 
     /**
      * Call call history API (legacy HttpSocket equivalent).
      */
-    protected function callCallHistoryApi(string $ccid, string $campaignId, int $limit, string $userId, string $dateFrom, string $dateTo): array
+    private function callCallHistoryApi(?string $url, string $ccid, int $limit, string $dateFrom, string $dateTo): array
     {
-        $core = $this->CoreSettings->find()
-            ->where(['deleted IS' => null])
-            ->first();
-
-        $url = $core?->ch_api_url;
         if (!$url) {
             return [];
         }
 
-        $userId = '';
-
         $params = [
             'ccid' => $ccid,
-            'campaign_id' => $campaignId,
+            'campaign_id' => self::CALL_HISTORY_CAMPAIGN_ID,
             'limit' => $limit,
-            'userid' => $userId,
+            'userid' => '',
             'date_from' => $dateFrom,
             'date_to' => $dateTo,
         ];
 
         $client = new Client();
         try {
-            $response = $client->get($url, $params);
+            // The legacy endpoint receives its parameters under query index 0.
+            $response = $client->get($url, [$params]);
             $body = json_decode((string)$response->getBody(), true);
-            return is_array($body) ? $body : [];
+            return is_array($body) && array_is_list($body) ? $body : [];
         } catch (\Throwable $e) {
             Log::error('通話履歴APIの呼び出しに失敗しました: ' . $e->getMessage());
             return [];
@@ -292,26 +257,12 @@ public function manualDialApi()
             ->orderBy(['id' => 'ASC'])
             ->toArray();
 
-        $session = $this->request->getSession();
-        $campaignId = $session->read('campaign');
-        $cidQuery = $this->MtCids
-            ->find('list', keyField: 'cid', valueField: 'item_name')
-            ->where(['deleted IS' => null]);
-
+        $campaignId = $this->request->getSession()->read('campaign');
+        $cidOpt = [];
         if (!empty($campaignId)) {
-            $cidQuery->where(['campaign_id' => $campaignId]);
-        }
-
-        $cidOpt = $cidQuery
-            ->orderBy(['disp_cd' => 'ASC'])
-            ->toArray();
-
-        // A normal login may not contain an Ameyo SSO campaign.
-        // Keep the dashboard usable and expose active notification numbers.
-        if (empty($cidOpt)) {
             $cidOpt = $this->MtCids
                 ->find('list', keyField: 'cid', valueField: 'item_name')
-                ->where(['deleted IS' => null])
+                ->where(['deleted IS' => null, 'campaign_id' => $campaignId])
                 ->orderBy(['disp_cd' => 'ASC'])
                 ->toArray();
         }
