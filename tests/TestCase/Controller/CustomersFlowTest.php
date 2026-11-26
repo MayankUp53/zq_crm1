@@ -178,6 +178,7 @@ class CustomersFlowTest extends TestCase
         $xpath = new \DOMXPath($dom);
         self::assertSame(15, $xpath->query('//table[@id="dt"]/thead/tr/td')->length);
         self::assertSame(15, $xpath->query('//table[@id="dt"]/tbody/tr[1]/td')->length);
+        self::assertSame(1, $xpath->query('//table[@id="dt"]/thead/tr/td[3]/br')->length);
         $addressLink = $xpath->query('//td[@class="customer-address"]/a')->item(0);
         self::assertSame("1288-2 Mori, Chikuma City,\nNagano Prefecture", $addressLink->textContent);
         self::assertSame('https://www.google.co.jp/maps?q=' . rawurlencode($address), $addressLink->getAttribute('href'));

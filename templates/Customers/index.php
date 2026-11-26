@@ -90,16 +90,16 @@ $this->Form->setTemplates(['inputContainer' => '{{content}}']);
         </span>
     </div>
     <div class="table-responsive">
-        <table id="dt" class="table table-striped table-hover" style="font-size:12px">
+        <table id="dt" class="table table-striped table-hover customer-results">
             <thead>
                 <tr height="35" bgcolor="#20b2aa" style="vertical-align:middle;color:#ffffff;">
                     <td width="4%">キー</td>
                     <td width="6%">複数口座CD</td>
-                    <td width="6%">得意先名（帳合先名）</td>
+                    <td width="9%">得意先名<br>（帳合先名）</td>
                     <td width="6%">拠点</td>
                     <td width="5%">TEL</td>
                     <td width="7%">サブ電話番号1</td>
-                    <td width="8%">住所1</td>
+                    <td width="11%">住所1</td>
                     <td width="6%">営業員CD</td>
                     <td width="6%">営業担当者名</td>
                     <td width="6%">サブ電話番号2</td>
@@ -170,10 +170,20 @@ $this->Form->setTemplates(['inputContainer' => '{{content}}']);
         color: #ffffff;
         background-color: #149c82;
     }
-    .customer-address {
-        min-width: 13em;
-        white-space: pre-line;
+    .customer-results {
+        width: 100%;
+        min-width: 720px;
+        table-layout: fixed;
+        font-size: 12px;
+    }
+    .customer-results > thead > tr > td,
+    .customer-results > tbody > tr > td {
+        padding: 6px 4px;
+        white-space: normal;
         overflow-wrap: anywhere;
+    }
+    .customer-results > tbody > tr > .customer-address {
+        white-space: pre-line;
     }
 </style>
 
