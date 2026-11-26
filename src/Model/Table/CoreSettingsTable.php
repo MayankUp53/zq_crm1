@@ -35,8 +35,9 @@ class CoreSettingsTable extends Table
         $validator->scalar('customer_contact_dial_caller_id')
             ->maxLength('customer_contact_dial_caller_id', 50)
             ->allowEmptyString('customer_contact_dial_caller_id');
-        $validator->integer('call_history_campaign_id')
-            ->range('call_history_campaign_id', [1, 2147483647])
+        $validator->scalar('call_history_campaign_id')
+            ->maxLength('call_history_campaign_id', 255)
+            ->regex('call_history_campaign_id', '/\A(?:0|[1-9][0-9]*(?:,[1-9][0-9]*)*)\z/', '0 またはカンマ区切りのキャンペーンIDを入力してください。')
             ->notEmptyString('call_history_campaign_id');
 
         return $validator;

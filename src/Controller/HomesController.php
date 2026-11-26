@@ -56,10 +56,14 @@ class HomesController extends AppController
 
         $limitField = $this->CoreSettings->getCallHistoryLimitField();
         $limit = (int)($core?->{$limitField} ?? 50);
+        $campaignId = (string)($core?->call_history_campaign_id ?? '0');
+        if ($campaignId === '0' || $campaignId === '') {
+            $campaignId = (string)$this->request->getSession()->read('campaign');
+        }
         $response = $this->callCallHistoryApi(
             $core?->ch_api_url,
             (string)$core?->ccid,
-            (int)$core?->call_history_campaign_id,
+            $campaignId,
             $limit,
             date('Y-m-d', strtotime('-1 month')),
             date('Y-m-d')
@@ -209,9 +213,9 @@ class HomesController extends AppController
     /**
      * Call call history API (legacy HttpSocket equivalent).
      */
-    private function callCallHistoryApi(?string $url, string $ccid, int $campaignId, int $limit, string $dateFrom, string $dateTo): array
+    private function callCallHistoryApi(?string $url, string $ccid, string $campaignId, int $limit, string $dateFrom, string $dateTo): array
     {
-        if (!$url || $campaignId < 1) {
+        if (!$url || $campaignId === '' || $campaignId === '0') {
             return [];
         }
 

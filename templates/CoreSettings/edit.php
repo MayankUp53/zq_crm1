@@ -43,7 +43,7 @@
 
             <tr>
                 <td style="vertical-align:middle;color:#ffffff;" bgcolor="#ff8c00">コール履歴キャンペーンID</td>
-                <td><?= $this->Form->control('call_history_campaign_id', ['label' => false, 'type' => 'number', 'min' => 1, 'step' => 1, 'required' => true, 'class' => 'form-control']) ?></td>
+                <td><?= $this->Form->control('call_history_campaign_id', ['label' => false, 'type' => 'text', 'maxlength' => 255, 'required' => true, 'class' => 'form-control']) ?></td>
                 <td style="vertical-align:middle;color:#ffffff;" bgcolor="#ff8c00">コール履歴表示件数</td>
                 <td><?= $this->Form->control($limitField, ['label' => false, 'class' => 'form-control']) ?></td>
             </tr>

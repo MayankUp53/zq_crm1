@@ -73,11 +73,12 @@ Inspect mt_outline/mt_overview and phinxlog if they exist. Do not assume that ei
 
 ## Production migration source
 
-`config/ProductionUpgrade/` contains three migrations.
+`config/ProductionUpgrade/` contains four migrations.
 
 - `20261119120000` adds `core_settings.customer_contact_dial_caller_id` when the column is missing. Existing settings receive `05033106255` as the default. A caller ID already saved in the column is preserved.
 - `20261119130000` widens `users.password` to `VARCHAR(255)` when needed and retains the existing values. A wider `VARCHAR` is preserved.
-- `20261126120000` adds `core_settings.call_history_campaign_id` with the legacy default of `29`. Change it in Advanced Settings to select a different campaign for Home call history.
+- `20261126120000` adds the original integer `core_settings.call_history_campaign_id` column.
+- `20261126130000` changes the column to text, sets the default to `0`, and replaces the previous integer value `29` with `0`. Home call history uses the Ameyo session campaign when the setting is `0`. A saved list such as `55,33,44` is sent to the call history API as a single value.
 
 The versions use the same migration log as the main migration source. The corresponding files under `config/Migrations/` load the same implementations for fresh installations. Recover from migration problems using the verified backup. The production migrations refuse automatic rollback because reversing them could discard saved settings or truncate password hashes.
 

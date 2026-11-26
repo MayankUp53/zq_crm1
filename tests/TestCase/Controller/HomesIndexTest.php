@@ -14,23 +14,34 @@ use Cake\Http\ServerRequest;
 use Cake\Http\Session;
 use Cake\ORM\Table;
 use Cake\Routing\Router;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class HomesIndexTest extends TestCase
 {
-    public function testCallHistoryUsesConfiguredCampaignWhileDialUsesSessionCampaign(): void
+    public static function callHistoryCampaigns(): array
+    {
+        return [
+            'single configured campaign' => ['37', '37'],
+            'configured campaign list' => ['55,33,44', '55,33,44'],
+            'session campaign' => ['0', '52'],
+        ];
+    }
+
+    #[DataProvider('callHistoryCampaigns')]
+    public function testCallHistoryResolvesCampaignWhileDialUsesSessionCampaign(string $setting, string $expectedCampaign): void
     {
         $connection = new Connection(['driver' => Sqlite::class, 'database' => ':memory:']);
         $url = 'http://127.0.0.1:1/history';
-        $connection->execute('CREATE TABLE core_settings (id INTEGER PRIMARY KEY, ch_api_url TEXT, ccid TEXT, call_history_campaign_id INTEGER, limit_value INTEGER, deleted DATETIME)');
+        $connection->execute('CREATE TABLE core_settings (id INTEGER PRIMARY KEY, ch_api_url TEXT, ccid TEXT, call_history_campaign_id VARCHAR(255), limit_value INTEGER, deleted DATETIME)');
         $connection->execute('CREATE TABLE users (id INTEGER PRIMARY KEY, user_name TEXT, deleted DATETIME)');
         $connection->execute('CREATE TABLE mt_cids (id INTEGER PRIMARY KEY, cid TEXT, item_name TEXT, campaign_id INTEGER, disp_cd INTEGER, deleted DATETIME)');
-        $connection->insert('core_settings', ['ch_api_url' => $url, 'ccid' => 'test-ccid', 'call_history_campaign_id' => 37, 'limit_value' => 80]);
+        $connection->insert('core_settings', ['ch_api_url' => $url, 'ccid' => 'test-ccid', 'call_history_campaign_id' => $setting, 'limit_value' => 80]);
         $connection->insert('mt_cids', ['cid' => '05000000001', 'item_name' => 'Session caller ID', 'campaign_id' => 52]);
         $connection->insert('mt_cids', ['cid' => '05000000002', 'item_name' => 'History caller ID', 'campaign_id' => 37]);
         $call = ['call_id' => 'call-123', 'crt_object_id' => 'recording-456', 'phone' => '0312345678', 'srcphone' => '0312345678'];
         $query = http_build_query([[
-            'ccid' => 'test-ccid', 'campaign_id' => 37, 'limit' => 80, 'userid' => '',
+            'ccid' => 'test-ccid', 'campaign_id' => $expectedCampaign, 'limit' => 80, 'userid' => '',
             'date_from' => date('Y-m-d', strtotime('-1 month')), 'date_to' => date('Y-m-d'),
         ]], '', '&', PHP_QUERY_RFC3986);
         Client::addMockResponse('GET', $url . '?' . $query, new Response([], json_encode([$call])));
