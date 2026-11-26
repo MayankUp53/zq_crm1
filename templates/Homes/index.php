@@ -14,8 +14,6 @@ $this->Html->css('https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap
         <h3 class="panel-title">AmeyoJ ダッシュボード</h3>
     </div>
 
-<?php if (!empty($cidOpt)): ?>
-
 <!-- ===================================================== -->
 <!-- JAVASCRIPT VALIDATION + PHONE BOOK HANDLER -->
 <!-- ===================================================== -->
@@ -40,7 +38,6 @@ function validateManualDial() {
 <!-- ===================================================== -->
 <!-- MANUAL DIAL FORM -->
 <!-- ===================================================== -->
-<?php if (!empty($cidOpt)): ?>
 <?= $this->Form->create(null, [
     'url' => ['controller' => 'Homes', 'action' => 'manualDialApi'],
     'class' => 'form-inline',
@@ -82,6 +79,7 @@ function validateManualDial() {
         <td style="padding-left:6px;">
             <?= $this->Form->submit('発信', [
                 'class' => 'btn btn-info btn-xs',
+                'disabled' => empty($cidOpt),
             ]) ?>
         </td>
 
@@ -89,9 +87,6 @@ function validateManualDial() {
 </table>
 
 <?= $this->Form->end() ?>
-<?php endif; ?>
-
-<?php endif; ?>
 
 </div>
 
