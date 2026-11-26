@@ -1,6 +1,6 @@
 # JSFIT: existing CakePHP 2 production database to CakePHP 5
 
-The scoped migration source is ready. It covers the caller ID setting and password column width. Full production compatibility still needs rehearsal on a database clone. No production database changes have been made from this workspace.
+The scoped migration source is ready. It covers the caller ID setting, call history campaign ID and password column width. Full production compatibility still needs rehearsal on a database clone. No production database changes have been made from this workspace.
 
 ## Runtime and release
 
@@ -73,16 +73,17 @@ Inspect mt_outline/mt_overview and phinxlog if they exist. Do not assume that ei
 
 ## Production migration source
 
-`config/ProductionUpgrade/` contains two migrations.
+`config/ProductionUpgrade/` contains three migrations.
 
 - `20261119120000` adds `core_settings.customer_contact_dial_caller_id` when the column is missing. Existing settings receive `05033106255` as the default. A caller ID already saved in the column is preserved.
 - `20261119130000` widens `users.password` to `VARCHAR(255)` when needed and retains the existing values. A wider `VARCHAR` is preserved.
+- `20261126120000` adds `core_settings.call_history_campaign_id` with the legacy default of `29`. Change it in Advanced Settings to select a different campaign for Home call history.
 
-Both versions use the same migration log as the main migration source. The two files under `config/Migrations/` load the same implementations for fresh installations. Recover from migration problems using the verified backup. Both production migrations refuse automatic rollback because reversing them could discard saved settings or truncate password hashes.
+The versions use the same migration log as the main migration source. The corresponding files under `config/Migrations/` load the same implementations for fresh installations. Recover from migration problems using the verified backup. The production migrations refuse automatic rollback because reversing them could discard saved settings or truncate password hashes.
 
 ## Remaining compatibility checks
 
-The two focused migrations address the approved schema changes. Use the staging rehearsal to resolve the remaining compatibility gaps.
+The scoped migrations address the approved schema changes. Use the staging rehearsal to resolve the remaining compatibility gaps.
 
 - Validate required legacy tables/columns before making changes; fail clearly for an unexpected schema.
 - Add required missing columns without dropping existing customer/contact data or changing primary IDs.

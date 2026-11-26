@@ -41,11 +41,16 @@
             </tr>
 
             <tr>
+                <td style="vertical-align:middle;color:#ffffff;" bgcolor="#ff8c00">コール履歴キャンペーンID</td>
+                <td><?= $this->Form->control('call_history_campaign_id', ['label' => false, 'type' => 'number', 'min' => 1, 'step' => 1, 'required' => true, 'class' => 'form-control']) ?></td>
                 <td style="vertical-align:middle;color:#ffffff;" bgcolor="#ff8c00">コール履歴表示件数</td>
                 <td><?= $this->Form->control($limitField, ['label' => false, 'div' => false, 'class' => 'form-control']) ?></td>
+            </tr>
 
+            <tr>
                 <td style="vertical-align:middle;color:#ffffff;" bgcolor="#ff8c00">コールバック通知時間（分）</td>
                 <td><?= $this->Form->control('callback_notice_time', ['label' => false, 'div' => false, 'class' => 'form-control']) ?></td>
+                <td colspan="2"></td>
             </tr>
 
             <tr>

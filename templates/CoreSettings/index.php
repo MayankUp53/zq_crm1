@@ -43,6 +43,11 @@ $callerId = trim((string)$row?->customer_contact_dial_caller_id);
         </tr>
 
         <tr>
+            <td style="vertical-align:middle;color:#ffffff;" bgcolor="#20b2aa">コール履歴キャンペーンID</td>
+            <td><?= h($row?->call_history_campaign_id ?? '未設定') ?>&nbsp;</td>
+        </tr>
+
+        <tr>
             <td style="vertical-align:middle;color:#ffffff;" bgcolor="#20b2aa">コール履歴表示件数</td>
             <td><?= h($row?->{$limitField} ?? '') ?>&nbsp;</td>
         </tr>

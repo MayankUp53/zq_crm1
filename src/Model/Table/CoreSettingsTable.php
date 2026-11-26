@@ -35,6 +35,9 @@ class CoreSettingsTable extends Table
         $validator->scalar('customer_contact_dial_caller_id')
             ->maxLength('customer_contact_dial_caller_id', 50)
             ->allowEmptyString('customer_contact_dial_caller_id');
+        $validator->integer('call_history_campaign_id')
+            ->range('call_history_campaign_id', [1, 2147483647])
+            ->notEmptyString('call_history_campaign_id');
 
         return $validator;
     }

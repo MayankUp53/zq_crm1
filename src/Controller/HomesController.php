@@ -18,8 +18,6 @@ use function Cake\Error\debug;
  */
 class HomesController extends AppController
 {
-    private const CALL_HISTORY_CAMPAIGN_ID = '29';
-
     protected $CoreSettings;
     protected $MtCids;
     protected $MtPhonelists;
@@ -53,6 +51,7 @@ class HomesController extends AppController
 
         $core = $this->CoreSettings->find()
             ->where(['deleted IS' => null])
+            ->orderBy(['id' => 'ASC'])
             ->first();
 
         $limitField = $this->CoreSettings->getCallHistoryLimitField();
@@ -60,6 +59,7 @@ class HomesController extends AppController
         $response = $this->callCallHistoryApi(
             $core?->ch_api_url,
             (string)$core?->ccid,
+            (int)$core?->call_history_campaign_id,
             $limit,
             date('Y-m-d', strtotime('-1 month')),
             date('Y-m-d')
@@ -209,15 +209,15 @@ class HomesController extends AppController
     /**
      * Call call history API (legacy HttpSocket equivalent).
      */
-    private function callCallHistoryApi(?string $url, string $ccid, int $limit, string $dateFrom, string $dateTo): array
+    private function callCallHistoryApi(?string $url, string $ccid, int $campaignId, int $limit, string $dateFrom, string $dateTo): array
     {
-        if (!$url) {
+        if (!$url || $campaignId < 1) {
             return [];
         }
 
         $params = [
             'ccid' => $ccid,
-            'campaign_id' => self::CALL_HISTORY_CAMPAIGN_ID,
+            'campaign_id' => $campaignId,
             'limit' => $limit,
             'userid' => '',
             'date_from' => $dateFrom,
