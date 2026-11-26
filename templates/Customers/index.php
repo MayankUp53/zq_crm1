@@ -6,18 +6,6 @@
  */
 $currentUser = $this->request->getAttribute('identity');
 $search = $searchData ?? [];
-$additionalSearchKeys = [
-    'client_name', 'client_branch_name', 'client_branch_code', 'section_name',
-    'sales_rep_name', 'incharge1_name', 'incharge1_phone', 'incharge2_name',
-    'incharge2_phone',
-];
-$hasAdditionalSearch = false;
-foreach ($additionalSearchKeys as $searchKey) {
-    if (!empty($search[$searchKey])) {
-        $hasAdditionalSearch = true;
-        break;
-    }
-}
 $this->Form->setTemplates(['inputContainer' => '{{content}}']);
 ?>
 <div class="panel panel-primary">
@@ -91,37 +79,6 @@ $this->Form->setTemplates(['inputContainer' => '{{content}}']);
             <?= $this->Form->button('検索結果を出力', ['name' => 'download', 'value' => '1', 'type' => 'submit', 'class' => 'btn-success btn-xs', 'style' => 'width:150px;height:30px;cursor:pointer']) ?>
         <?php endif; ?>
     </div>
-    <details class="additional-search" <?= $hasAdditionalSearch ? 'open' : '' ?>>
-        <summary>追加検索条件</summary>
-        <table class="table">
-            <tbody>
-                <tr>
-                    <td class="search-label">得意先名</td>
-                    <td><?= $this->Form->control('Search.client_name', ['label' => false, 'value' => $search['client_name'] ?? '', 'class' => 'form-control']) ?></td>
-                    <td class="search-label">得意先支店名</td>
-                    <td><?= $this->Form->control('Search.client_branch_name', ['label' => false, 'value' => $search['client_branch_name'] ?? '', 'class' => 'form-control']) ?></td>
-                    <td class="search-label">得意先支店CD</td>
-                    <td><?= $this->Form->control('Search.client_branch_code', ['label' => false, 'value' => $search['client_branch_code'] ?? '', 'class' => 'form-control']) ?></td>
-                </tr>
-                <tr>
-                    <td class="search-label">所属名</td>
-                    <td><?= $this->Form->control('Search.section_name', ['label' => false, 'value' => $search['section_name'] ?? '', 'class' => 'form-control']) ?></td>
-                    <td class="search-label">営業担当者名（旧項目）</td>
-                    <td><?= $this->Form->control('Search.sales_rep_name', ['label' => false, 'value' => $search['sales_rep_name'] ?? '', 'class' => 'form-control']) ?></td>
-                    <td class="search-label">顧客の担当者1</td>
-                    <td><?= $this->Form->control('Search.incharge1_name', ['label' => false, 'value' => $search['incharge1_name'] ?? '', 'class' => 'form-control']) ?></td>
-                </tr>
-                <tr>
-                    <td class="search-label">顧客の担当者1電話</td>
-                    <td><?= $this->Form->control('Search.incharge1_phone', ['label' => false, 'value' => $search['incharge1_phone'] ?? '', 'class' => 'form-control']) ?></td>
-                    <td class="search-label">顧客の担当者2</td>
-                    <td><?= $this->Form->control('Search.incharge2_name', ['label' => false, 'value' => $search['incharge2_name'] ?? '', 'class' => 'form-control']) ?></td>
-                    <td class="search-label">顧客の担当者2電話</td>
-                    <td><?= $this->Form->control('Search.incharge2_phone', ['label' => false, 'value' => $search['incharge2_phone'] ?? '', 'class' => 'form-control']) ?></td>
-                </tr>
-            </tbody>
-        </table>
-    </details>
     <?= $this->Form->end() ?>
 </div>
 
@@ -206,14 +163,6 @@ $this->Form->setTemplates(['inputContainer' => '{{content}}']);
         vertical-align: middle;
         color: #ffffff;
         background-color: #149c82;
-    }
-    .additional-search {
-        width: 95%;
-        margin: 0 auto 8px;
-    }
-    .additional-search summary {
-        color: #149c82;
-        cursor: pointer;
     }
 </style>
 

@@ -160,8 +160,9 @@ class CustomersFlowTest extends TestCase
         self::assertSame(0, $method->invoke($controller, ['addr1' => 'Tokyo'])->count());
         self::assertSame(1, $method->invoke($controller, ['addr2_search' => 'Tokyo', 'sales_person' => 'Sales', 'client_code' => '234'])->count());
         self::assertSame(1, $method->invoke($controller, ['sales_person' => 'Legacy Sales'])->count());
-        self::assertSame(0, $method->invoke($controller, ['client_branch_name' => 'missing'])->count());
+        $controller->getRequest()->getSession()->write('Customers.search', ['client_branch_name' => 'missing']);
         $controller->index();
+        $controller->getRequest()->getSession()->delete('Customers.search');
         $view = new AppView($controller->getRequest());
         $view->set($controller->viewBuilder()->getVars());
         $html = $view->render('Customers/index', false);
@@ -170,6 +171,7 @@ class CustomersFlowTest extends TestCase
         self::assertStringNotContainsString('/customers/view/' . $id, $html);
         self::assertStringNotContainsString('>操作<', $html);
         self::assertStringNotContainsString('callModal', $html);
+        self::assertStringNotContainsString('追加検索条件', $html);
         $dom = new \DOMDocument();
         @$dom->loadHTML('<?xml encoding="UTF-8">' . $html);
         $xpath = new \DOMXPath($dom);
@@ -221,9 +223,9 @@ class CustomersFlowTest extends TestCase
     public function testSearchPersistenceClearAndExport(): void
     {
         $this->addCustomer(['book_name' => 'Export book', 'sub_phone4' => '555-1234', 'remarks1' => 'Order note']);
-        $controller = $this->controller('index', 'POST', ['searching' => '1', 'Search' => ['client_name' => 'Customer']]);
+        $controller = $this->controller('index', 'POST', ['searching' => '1', 'Search' => ['book_name' => 'Export']]);
         $controller->index();
-        self::assertSame(['client_name' => 'Customer'], $controller->getRequest()->getSession()->read('Customers.search'));
+        self::assertSame(['book_name' => 'Export'], $controller->getRequest()->getSession()->read('Customers.search'));
         $controller->clearSession();
         self::assertNull($controller->getRequest()->getSession()->read('Customers.search'));
 

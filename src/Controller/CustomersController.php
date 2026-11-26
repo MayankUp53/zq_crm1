@@ -128,12 +128,9 @@ class CustomersController extends AppController
     {
         $query = $this->Customers->find()->where(['Customers.deleted IS' => null]);
         foreach ([
-            'client_code', 'client_branch_code', 'client_name', 'client_branch_name',
-            'book_name', 'base_name', 'sales_staff_cd', 'sales_rep_name',
-            'section_name', 'collection_cls', 'direct_cls',
+            'client_code', 'book_name', 'base_name', 'sales_staff_cd', 'collection_cls', 'direct_cls',
             'reserve1', 'reserve2', 'sub_phone1', 'sub_phone2', 'sub_phone3',
-            'sub_phone4', 'sub_phone5', 'incharge1_name', 'incharge1_phone',
-            'incharge2_name', 'incharge2_phone',
+            'sub_phone4', 'sub_phone5',
         ] as $field) {
             $value = trim((string)($searchData[$field] ?? ''));
             if ($value !== '') {
@@ -600,18 +597,13 @@ class CustomersController extends AppController
             'tel_only' => '',
             'tel2_only' => '',
             'tel3_only' => '',
-            'client_name' => '',
-            'client_branch_name' => '',
             'book_name' => '',
             'base_name' => '',
             'addr1' => '',
             'addr2' => '',
             'addr2_search' => '',
             'client_code' => '',
-            'client_branch_code' => '',
-            'section_name' => '',
             'sales_person' => '',
-            'sales_rep_name' => '',
             'sales_staff_cd' => '',
             'closing_date' => '',
             'collection_cls' => '',
@@ -623,10 +615,6 @@ class CustomersController extends AppController
             'sub_phone3' => '',
             'sub_phone4' => '',
             'sub_phone5' => '',
-            'incharge1_name' => '',
-            'incharge1_phone' => '',
-            'incharge2_name' => '',
-            'incharge2_phone' => '',
             'email'     => '',
             'fax'       => '',
             'created'   => '',
