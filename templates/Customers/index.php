@@ -120,6 +120,12 @@ $this->Form->setTemplates(['inputContainer' => '{{content}}']);
                             ?: $customer->name
                             ?: $customer->client_code
                             ?: '顧客 #' . $customer->id;
+                        $address = (string)$customer->addr1;
+                        $addressLabel = $address;
+                        $lastComma = strrpos($address, ',');
+                        if ($lastComma !== false && !str_contains($address, "\n")) {
+                            $addressLabel = substr($address, 0, $lastComma + 1) . "\n" . ltrim(substr($address, $lastComma + 1));
+                        }
                         ?>
                         <td><?= h($customer->client_code ?? $customer->client_cd) ?></td>
                         <td><?= h($customer->client_branch_code) ?></td>
@@ -130,7 +136,7 @@ $this->Form->setTemplates(['inputContainer' => '{{content}}']);
                             ['_name' => 'customerDial', 'phone' => rawurlencode((string)$customer->tel)]
                         ) : '' ?></td>
                         <td><?= h($customer->sub_phone1 ?: $customer->tel2) ?></td>
-                        <td><a style="color:blue" target="_blank" rel="noopener noreferrer" href="https://www.google.co.jp/maps?q=<?= rawurlencode((string)$customer->addr1) ?>"><?= h($customer->addr1) ?></a></td>
+                        <td class="customer-address"><a style="color:blue" target="_blank" rel="noopener noreferrer" href="https://www.google.co.jp/maps?q=<?= rawurlencode($address) ?>"><?= h($addressLabel) ?></a></td>
                         <td><?= h($customer->sales_staff_cd) ?></td>
                         <td><?= h($customer->sales_rep_name ?: $customer->sales_person) ?></td>
                         <td><?= h($customer->sub_phone2 ?: $customer->tel3) ?></td>
@@ -163,6 +169,11 @@ $this->Form->setTemplates(['inputContainer' => '{{content}}']);
         vertical-align: middle;
         color: #ffffff;
         background-color: #149c82;
+    }
+    .customer-address {
+        min-width: 13em;
+        white-space: pre-line;
+        overflow-wrap: anywhere;
     }
 </style>
 

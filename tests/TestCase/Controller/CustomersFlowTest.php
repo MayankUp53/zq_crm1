@@ -139,8 +139,9 @@ class CustomersFlowTest extends TestCase
 
     public function testSearchAndIndexLayout(): void
     {
+        $address = '1288-2 Mori, Chikuma City, Nagano Prefecture';
         $id = $this->addCustomer([
-            'addr1' => 'Osaka',
+            'addr1' => $address,
             'addr2' => 'Tokyo',
             'sales_person' => 'Sales',
             'sales_rep_name' => 'Legacy Sales',
@@ -156,7 +157,7 @@ class CustomersFlowTest extends TestCase
         self::assertSame(1, $method->invoke($controller, ['book_name' => 'Legacy'])->count());
         self::assertSame(1, $method->invoke($controller, ['sub_phone3' => '9999'])->count());
         self::assertSame(1, $method->invoke($controller, ['addr2_search' => 'Tokyo'])->count());
-        self::assertSame(1, $method->invoke($controller, ['addr1' => 'Osaka'])->count());
+        self::assertSame(1, $method->invoke($controller, ['addr1' => 'Chikuma'])->count());
         self::assertSame(0, $method->invoke($controller, ['addr1' => 'Tokyo'])->count());
         self::assertSame(1, $method->invoke($controller, ['addr2_search' => 'Tokyo', 'sales_person' => 'Sales', 'client_code' => '234'])->count());
         self::assertSame(1, $method->invoke($controller, ['sales_person' => 'Legacy Sales'])->count());
@@ -177,6 +178,9 @@ class CustomersFlowTest extends TestCase
         $xpath = new \DOMXPath($dom);
         self::assertSame(15, $xpath->query('//table[@id="dt"]/thead/tr/td')->length);
         self::assertSame(15, $xpath->query('//table[@id="dt"]/tbody/tr[1]/td')->length);
+        $addressLink = $xpath->query('//td[@class="customer-address"]/a')->item(0);
+        self::assertSame("1288-2 Mori, Chikuma City,\nNagano Prefecture", $addressLink->textContent);
+        self::assertSame('https://www.google.co.jp/maps?q=' . rawurlencode($address), $addressLink->getAttribute('href'));
     }
 
     public function testIndexFallsBackToCustomerCodeWhenNamesAreMissing(): void
