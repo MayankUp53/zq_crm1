@@ -159,12 +159,6 @@ class ContactsController extends AppController
                      REPLACE(REPLACE(REPLACE(Customers.incharge4_phone, '-', ''), ' ', ''), '－', '') LIKE :phone";
             $query->where([$expr])->bind(':phone', "%{$phone}%", 'string');
         }
-        if (!empty($searchData['client_name'])) {
-            $query->where(['Customers.client_name LIKE' => '%' . trim((string)$searchData['client_name']) . '%']);
-        }
-        if (!empty($searchData['client_branch_name'])) {
-            $query->where(['Customers.client_branch_name LIKE' => '%' . trim((string)$searchData['client_branch_name']) . '%']);
-        }
         if (!empty($searchData['addr'])) {
             $query->where([
                 'OR' => [
@@ -688,8 +682,6 @@ class ContactsController extends AppController
             'customer_email' => '',
             'customer_id' => '',
             'contact_id' => '',
-            'client_name' => '',
-            'client_branch_name' => '',
             'base_name' => '',
             'book_name' => '',
             'addr' => '',

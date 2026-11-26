@@ -6,7 +6,6 @@ $statusSearchValue = $search['status'] ?? '';
 if (is_array($statusSearchValue)) {
     $statusSearchValue = $statusSearchValue === [] ? '' : (string)reset($statusSearchValue);
 }
-$hasAdditionalSearch = !empty($search['client_name']) || !empty($search['client_branch_name']);
 $this->Form->setTemplates(['inputContainer' => '{{content}}']);
 ?>
 <div class="panel panel-primary">
@@ -126,20 +125,6 @@ $this->Form->setTemplates(['inputContainer' => '{{content}}']);
             <?= $this->Form->button('検索結果を出力', ['name' => 'download', 'value' => '1', 'type' => 'submit', 'class' => 'btn-success btn-xs', 'style' => 'width:150px;height:30px;cursor:pointer']) ?>
         <?php endif; ?>
     </div>
-    <details class="additional-search" <?= $hasAdditionalSearch ? 'open' : '' ?>>
-        <summary>追加検索条件</summary>
-        <table class="table">
-            <tbody>
-                <tr>
-                    <td class="search-label">得意先名</td>
-                    <td><?= $this->Form->control('Search.client_name', ['label' => false, 'value' => $search['client_name'] ?? '', 'class' => 'form-control']) ?></td>
-                    <td class="search-label">得意先支店名</td>
-                    <td><?= $this->Form->control('Search.client_branch_name', ['label' => false, 'value' => $search['client_branch_name'] ?? '', 'class' => 'form-control']) ?></td>
-                    <td colspan="2"></td>
-                </tr>
-            </tbody>
-        </table>
-    </details>
     <?= $this->Form->end() ?>
 </div>
 
@@ -223,14 +208,6 @@ $this->Form->setTemplates(['inputContainer' => '{{content}}']);
         vertical-align: middle;
         color: #ffffff;
         background-color: #149c82;
-    }
-    .additional-search {
-        width: 95%;
-        margin: 0 auto 8px;
-    }
-    .additional-search summary {
-        color: #149c82;
-        cursor: pointer;
     }
 </style>
 

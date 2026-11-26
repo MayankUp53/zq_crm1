@@ -184,6 +184,7 @@ class ContactsUpdateFailureTest extends TestCase
             self::assertSame(0, $queryFor(['queue_name' => ['Other']])->count());
             self::assertSame(0, $queryFor(['status' => '2'])->count());
             self::assertSame(0, $queryFor(['summary' => 'Saved,missing'])->count());
+            self::assertSame(1, $queryFor(['client_name' => 'Missing', 'client_branch_name' => 'Missing'])->count());
 
             $download = $request->withMethod('POST')->withParsedBody(['download' => '1']);
             $controller = new ContactUpdateFailureHarness($download, 'Contacts', $connection);
