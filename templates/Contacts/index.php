@@ -34,29 +34,24 @@ $this->Form->setTemplates(['inputContainer' => '{{content}}']);
     </tr>
 
     <tr>
-        <td class="search-label" rowspan="3">住所</td>
-        <td rowspan="3">
-            <?= $this->Form->control('Search.addr', [
+        <td class="search-label">概要</td>
+        <td>
+            <?= $this->Form->control('Search.summary', [
                 'label' => false,
-                'type' => 'text',
-                'value' => $search['addr'] ?? '',
+                'value' => $search['summary'] ?? '',
                 'class' => 'form-control'
             ]) ?>
         </td>
-        <td class="search-label" rowspan="3">担当OP</td>
-        <td rowspan="3">
-            <?= $this->Form->control('Search.created_user_id', [
+        <td class="search-label">対応内容</td>
+        <td>
+            <?= $this->Form->control('Search.detail', [
                 'label' => false,
-                'type' => 'select',
-                'multiple' => true,
-                'options' => $opeOpt ?? $allUsersOpt ?? [],
-                'value' => $search['created_user_id'] ?? [],
-                'class' => 'form-control',
-                'size' => 6,
+                'value' => $search['detail'] ?? '',
+                'class' => 'form-control'
             ]) ?>
         </td>
-        <td class="search-label" rowspan="4">種別</td>
-        <td rowspan="4">
+        <td class="search-label" rowspan="3">種別</td>
+        <td rowspan="3">
             <?= $this->Form->control('Search.queue_name', [
                 'label' => false,
                 'type' => 'select',
@@ -69,22 +64,25 @@ $this->Form->setTemplates(['inputContainer' => '{{content}}']);
         </td>
     </tr>
     <tr>
-        <td class="search-label">概要</td>
+        <td class="search-label">住所</td>
         <td>
-            <?= $this->Form->control('Search.summary', [
+            <?= $this->Form->control('Search.addr', [
                 'label' => false,
-                'value' => $search['summary'] ?? '',
+                'type' => 'text',
+                'value' => $search['addr'] ?? '',
                 'class' => 'form-control'
             ]) ?>
         </td>
-    </tr>
-    <tr>
-        <td class="search-label">対応内容</td>
+        <td class="search-label">担当OP</td>
         <td>
-            <?= $this->Form->control('Search.detail', [
+            <?= $this->Form->control('Search.created_user_id', [
                 'label' => false,
-                'value' => $search['detail'] ?? '',
-                'class' => 'form-control'
+                'type' => 'select',
+                'multiple' => true,
+                'options' => $opeOpt ?? $allUsersOpt ?? [],
+                'value' => $search['created_user_id'] ?? [],
+                'class' => 'form-control',
+                'size' => 6,
             ]) ?>
         </td>
     </tr>
